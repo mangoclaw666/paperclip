@@ -140,4 +140,44 @@ export function registerClusterCommands(program: Command): void {
       const code = await createClusterCommand(deps).run(["doctor", id]);
       if (code !== 0) process.exit(code);
     });
+
+  clusterCmd
+    .command("set-git-credentials")
+    .description("Bind a git credentials secret to a cluster_tenant_policy row")
+    .requiredOption("--cluster <id>", "Cluster connection ID")
+    .requiredOption("--company <id>", "Company ID")
+    .requiredOption("--secret-id <uuid>", "Company secret UUID containing git credentials JSON")
+    .action(async (opts, cmd) => {
+      const globalOpts = cmd.parent?.parent?.opts() as { config?: string };
+      const deps = buildDeps(globalOpts);
+      const args = [
+        "set-git-credentials",
+        "--cluster", opts.cluster,
+        "--company", opts.company,
+        "--secret-id", opts.secretId,
+      ];
+      const code = await createClusterCommand(deps).run(args);
+      if (code !== 0) process.exit(code);
+    });
+
+  clusterCmd
+    .command("set-cilium-policy")
+    .description("Update per-tenant Cilium DNS allow-list and egress CIDRs")
+    .requiredOption("--cluster <id>", "Cluster connection ID")
+    .requiredOption("--company <id>", "Company ID")
+    .option("--cilium-dns <list>", "Comma-separated DNS allow-list (empty string clears)")
+    .option("--cilium-cidrs <list>", "Comma-separated egress CIDR list (empty string clears)")
+    .action(async (opts, cmd) => {
+      const globalOpts = cmd.parent?.parent?.opts() as { config?: string };
+      const deps = buildDeps(globalOpts);
+      const args = [
+        "set-cilium-policy",
+        "--cluster", opts.cluster,
+        "--company", opts.company,
+        ...(opts.ciliumDns !== undefined ? ["--cilium-dns", opts.ciliumDns] : []),
+        ...(opts.ciliumCidrs !== undefined ? ["--cilium-cidrs", opts.ciliumCidrs] : []),
+      ];
+      const code = await createClusterCommand(deps).run(args);
+      if (code !== 0) process.exit(code);
+    });
 }
