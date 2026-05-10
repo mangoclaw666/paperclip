@@ -34,6 +34,11 @@ export interface OAuthRouteDeps {
   db: any;
   publicUrl: string;
   rateLimiter: SlidingWindowLimiter;
+  // Optional per-tenant flood limiter for `POST /connect/:providerId`. Keyed
+  // by `companyId`, this guards against `oauth_authorization_states` row-flood
+  // abuse (50 / 5min per spec §10.4). Optional so existing test harnesses and
+  // older app.ts wirings continue to work; production wires it in app.ts.
+  connectFloodLimiter?: SlidingWindowLimiter;
   // The connect route does not use secretService, so the bag is partial here.
   // Routes that need a method assert it at call time.
   secretService: Partial<OAuthRouteSecretService>;
@@ -101,6 +106,15 @@ export function oauthRoutes(deps: OAuthRouteDeps): Router {
     if (!ok) {
       res.status(429).json({ errorCode: "rate_limited" });
       return;
+    }
+    if (deps.connectFloodLimiter) {
+      const floodOk = await deps.connectFloodLimiter.check(
+        `connect-flood:${req.params.companyId}`,
+      );
+      if (!floodOk) {
+        res.status(429).json({ errorCode: "connect_flood" });
+        return;
+      }
     }
 
     const { scopes, returnUrl } = (req.body ?? {}) as {

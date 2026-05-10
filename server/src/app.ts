@@ -354,6 +354,14 @@ export async function createApp(
     refreshFn: refreshConnectionImpl,
   });
   const oauthLimiter = createSlidingWindowLimiter({ limit: 60, windowMs: 60_000 });
+  // Per-tenant flood guard on POST /connect/:providerId to prevent
+  // `oauth_authorization_states` row-flood abuse from a single company
+  // (spec §10.4). Tuned at 50 requests / 5 minutes; complements the per-user
+  // rateLimiter above.
+  const oauthConnectFloodLimiter = createSlidingWindowLimiter({
+    limit: 50,
+    windowMs: 5 * 60 * 1000,
+  });
 
   api.use(
     "/companies/:companyId/oauth",
@@ -362,6 +370,7 @@ export async function createApp(
       db,
       publicUrl: oauthPublicUrl,
       rateLimiter: oauthLimiter,
+      connectFloodLimiter: oauthConnectFloodLimiter,
       secretService: oauthSecretService,
     }),
   );
