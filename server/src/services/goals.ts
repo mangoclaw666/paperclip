@@ -44,7 +44,7 @@ export async function getDefaultCompanyGoal(db: GoalReader, companyId: string) {
 
 export function goalService(db: Db) {
   return {
-    list: (companyId: string) => db.select().from(goals).where(eq(goals.companyId, companyId)),
+    list: (companyId: string) => db.select().from(goals).where(eq(goals.companyId, companyId)).orderBy(asc(goals.createdAt)),
 
     getById: (id: string) =>
       db
