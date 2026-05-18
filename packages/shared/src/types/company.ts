@@ -1,5 +1,13 @@
 import type { CompanyStatus, PauseReason } from "../constants.js";
 
+export interface CompanyExternalSource {
+  type: "filesystem";
+  rootPath: string;
+  workspacePath?: string | null;
+  syncCommand?: string | null;
+  lastSyncedAt?: string | null;
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -18,6 +26,7 @@ export interface Company {
   feedbackDataSharingConsentByUserId: string | null;
   feedbackDataSharingTermsVersion: string | null;
   brandColor: string | null;
+  externalSource?: CompanyExternalSource | null;
   logoAssetId: string | null;
   logoUrl: string | null;
   createdAt: Date;

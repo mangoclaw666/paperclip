@@ -1,5 +1,6 @@
 import type {
   Company,
+  CompanyExternalSource,
   CompanyPortabilityExportRequest,
   CompanyPortabilityExportPreviewResult,
   CompanyPortabilityExportResult,
@@ -10,6 +11,13 @@ import type {
   UpdateCompanyBranding,
 } from "@paperclipai/shared";
 import { api } from "./client";
+
+export interface CompanyResyncResult {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  company: Company;
+}
 
 export type CompanyStats = Record<string, { agentCount: number; issueCount: number }>;
 
@@ -58,4 +66,10 @@ export const companiesApi = {
     api.post<CompanyPortabilityPreviewResult>("/companies/import/preview", data),
   importBundle: (data: CompanyPortabilityImportRequest) =>
     api.post<CompanyPortabilityImportResult>("/companies/import", data),
+  updateExternalSource: (companyId: string, externalSource: CompanyExternalSource | null) =>
+    api.patch<Company>(`/companies/${companyId}/external-source`, { externalSource }),
+  openExternalSource: (companyId: string, target: "hub" | "workspace") =>
+    api.post<{ opened: string }>(`/companies/${companyId}/open`, { target }),
+  resyncExternalSource: (companyId: string) =>
+    api.post<CompanyResyncResult>(`/companies/${companyId}/resync`, {}),
 };

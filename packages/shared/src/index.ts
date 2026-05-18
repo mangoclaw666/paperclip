@@ -258,6 +258,7 @@ export {
 
 export type {
   Company,
+  CompanyExternalSource,
   Environment,
   EnvironmentLease,
   EnvironmentProbeResult,
@@ -699,6 +700,9 @@ export {
   createCompanySchema,
   updateCompanySchema,
   updateCompanyBrandingSchema,
+  companyExternalSourceSchema,
+  updateCompanyExternalSourceSchema,
+  companyOpenTargetSchema,
   feedbackTargetTypeSchema,
   feedbackTraceStatusSchema,
   feedbackVoteValueSchema,
@@ -706,6 +710,8 @@ export {
   type CreateCompany,
   type UpdateCompany,
   type UpdateCompanyBranding,
+  type UpdateCompanyExternalSource,
+  type CompanyOpenTarget,
   type UpsertIssueFeedbackVote,
   environmentDriverSchema,
   environmentStatusSchema,

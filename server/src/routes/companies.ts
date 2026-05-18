@@ -1,7 +1,9 @@
 import { Router, type Request } from "express";
+import { spawn } from "node:child_process";
 import type { Db } from "@paperclipai/db";
 import {
   DEFAULT_FEEDBACK_DATA_SHARING_TERMS_VERSION,
+  companyOpenTargetSchema,
   companyPortabilityExportSchema,
   companyPortabilityImportSchema,
   companyPortabilityPreviewSchema,
@@ -10,6 +12,7 @@ import {
   feedbackTraceStatusSchema,
   feedbackVoteValueSchema,
   updateCompanyBrandingSchema,
+  updateCompanyExternalSourceSchema,
   updateCompanySchema,
 } from "@paperclipai/shared";
 import { badRequest, forbidden } from "../errors.js";
@@ -352,6 +355,111 @@ export function companyRoutes(db: Db, storage?: StorageService) {
       details: body,
     });
     res.json(company);
+  });
+
+  function requireLocalImplicit(req: Request) {
+    if (req.actor.type !== "board" || req.actor.source !== "local_implicit") {
+      throw forbidden("Available only in local trusted mode");
+    }
+  }
+
+  function openInOsExplorer(targetPath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const platform = process.platform;
+      const cmd = platform === "win32" ? "explorer.exe" : platform === "darwin" ? "open" : "xdg-open";
+      const child = spawn(cmd, [targetPath], { detached: true, stdio: "ignore" });
+      child.on("error", reject);
+      child.unref();
+      // explorer.exe returns non-zero exit even on success; fire-and-forget.
+      resolve();
+    });
+  }
+
+  function runResyncCommand(syncCommand: string, cwd: string, timeoutMs = 120_000): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+    return new Promise((resolve, reject) => {
+      const child = spawn(syncCommand, { cwd, shell: true });
+      let stdout = "";
+      let stderr = "";
+      let killed = false;
+      const timer = setTimeout(() => {
+        killed = true;
+        child.kill("SIGTERM");
+      }, timeoutMs);
+      child.stdout?.on("data", (chunk) => { stdout += chunk.toString().slice(0, 100_000); });
+      child.stderr?.on("data", (chunk) => { stderr += chunk.toString().slice(0, 100_000); });
+      child.on("error", (err) => { clearTimeout(timer); reject(err); });
+      child.on("close", (code) => {
+        clearTimeout(timer);
+        resolve({ exitCode: killed ? -1 : (code ?? 0), stdout: stdout.slice(0, 50_000), stderr: stderr.slice(0, 50_000) });
+      });
+    });
+  }
+
+  router.patch("/:companyId/external-source", validate(updateCompanyExternalSourceSchema), async (req, res) => {
+    const companyId = req.params.companyId as string;
+    assertCompanyAccess(req, companyId);
+    requireLocalImplicit(req);
+    const externalSource = req.body.externalSource ?? null;
+    const company = await svc.update(companyId, { externalSource } as Partial<Parameters<typeof svc.update>[1]>);
+    if (!company) {
+      res.status(404).json({ error: "Company not found" });
+      return;
+    }
+    const actor = getActorInfo(req);
+    await logActivity(db, {
+      companyId, actorType: actor.actorType, actorId: actor.actorId,
+      agentId: actor.agentId, runId: actor.runId,
+      action: externalSource ? "company.external_source_set" : "company.external_source_cleared",
+      entityType: "company", entityId: companyId,
+      details: { rootPath: externalSource?.rootPath ?? null },
+    });
+    res.json(company);
+  });
+
+  router.post("/:companyId/open", validate(companyOpenTargetSchema), async (req, res) => {
+    const companyId = req.params.companyId as string;
+    assertCompanyAccess(req, companyId);
+    requireLocalImplicit(req);
+    const company = await svc.getById(companyId);
+    if (!company) { res.status(404).json({ error: "Company not found" }); return; }
+    const source = (company as { externalSource?: { rootPath: string; workspacePath?: string | null } | null }).externalSource;
+    if (!source) { throw badRequest("Company has no externalSource configured"); }
+    const target = req.body.target === "workspace" ? (source.workspacePath ?? source.rootPath) : source.rootPath;
+    try {
+      await openInOsExplorer(target);
+      res.json({ opened: target });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to open path", detail: String(err) });
+    }
+  });
+
+  router.post("/:companyId/resync", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    assertCompanyAccess(req, companyId);
+    requireLocalImplicit(req);
+    const company = await svc.getById(companyId);
+    if (!company) { res.status(404).json({ error: "Company not found" }); return; }
+    const source = (company as { externalSource?: { rootPath: string; workspacePath?: string | null; syncCommand?: string | null } | null }).externalSource;
+    if (!source) { throw badRequest("Company has no externalSource configured"); }
+    if (!source.syncCommand) { throw badRequest("externalSource has no syncCommand"); }
+    const cwd = source.workspacePath ?? source.rootPath;
+    try {
+      const result = await runResyncCommand(source.syncCommand, cwd);
+      const updated = await svc.update(companyId, {
+        externalSource: { ...source, lastSyncedAt: new Date().toISOString() },
+      } as Partial<Parameters<typeof svc.update>[1]>);
+      const actor = getActorInfo(req);
+      await logActivity(db, {
+        companyId, actorType: actor.actorType, actorId: actor.actorId,
+        agentId: actor.agentId, runId: actor.runId,
+        action: "company.external_resync",
+        entityType: "company", entityId: companyId,
+        details: { exitCode: result.exitCode, command: source.syncCommand },
+      });
+      res.json({ ...result, company: updated });
+    } catch (err) {
+      res.status(500).json({ error: "Resync failed", detail: String(err) });
+    }
   });
 
   router.patch("/:companyId/branding", validate(updateCompanyBrandingSchema), async (req, res) => {

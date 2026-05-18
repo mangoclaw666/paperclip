@@ -57,3 +57,23 @@ export const updateCompanyBrandingSchema = z
   );
 
 export type UpdateCompanyBranding = z.infer<typeof updateCompanyBrandingSchema>;
+
+export const companyExternalSourceSchema = z.object({
+  type: z.literal("filesystem"),
+  rootPath: z.string().min(1),
+  workspacePath: z.string().min(1).nullable().optional(),
+  syncCommand: z.string().min(1).nullable().optional(),
+  lastSyncedAt: z.string().datetime().nullable().optional(),
+});
+
+export const updateCompanyExternalSourceSchema = z.object({
+  externalSource: companyExternalSourceSchema.nullable(),
+});
+
+export type UpdateCompanyExternalSource = z.infer<typeof updateCompanyExternalSourceSchema>;
+
+export const companyOpenTargetSchema = z.object({
+  target: z.enum(["hub", "workspace"]),
+});
+
+export type CompanyOpenTarget = z.infer<typeof companyOpenTargetSchema>;
