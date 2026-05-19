@@ -610,6 +610,13 @@
       "when": 1779574400000,
       "tag": "0086_company_external_source",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1779628800000,
+      "tag": "0087_company_agent_prompt_defaults",
+      "breakpoints": true
     }
   ]
 }

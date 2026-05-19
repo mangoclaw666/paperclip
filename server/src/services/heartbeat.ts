@@ -27,6 +27,7 @@ import {
   agentWakeupRequests,
   activityLog,
   approvals,
+  companies,
   companySkills as companySkillsTable,
   documentRevisions,
   issueDocuments,
@@ -7095,8 +7096,32 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       runScopedMentionedSkillKeys,
     );
     const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(agent.companyId);
-    let runtimeConfig = {
+    // Apply company-level agent prompt defaults when the agent itself has not
+    // set a per-agent override. Lets a single Settings page configure language /
+    // protocol prompts for every agent in a company.
+    const companyDefaultsRow = await db
+      .select({
+        bootstrapTemplate: companies.bootstrapTemplate,
+        heartbeatTemplate: companies.heartbeatTemplate,
+      })
+      .from(companies)
+      .where(eq(companies.id, agent.companyId))
+      .then((rows) => rows[0] ?? null);
+    const withCompanyDefaults = {
       ...effectiveResolvedConfig,
+      ...(typeof effectiveResolvedConfig.bootstrapPromptTemplate === "string" && (effectiveResolvedConfig.bootstrapPromptTemplate as string).length > 0
+        ? {}
+        : companyDefaultsRow?.bootstrapTemplate
+          ? { bootstrapPromptTemplate: companyDefaultsRow.bootstrapTemplate }
+          : {}),
+      ...(typeof effectiveResolvedConfig.promptTemplate === "string" && (effectiveResolvedConfig.promptTemplate as string).length > 0
+        ? {}
+        : companyDefaultsRow?.heartbeatTemplate
+          ? { promptTemplate: companyDefaultsRow.heartbeatTemplate }
+          : {}),
+    };
+    let runtimeConfig = {
+      ...withCompanyDefaults,
       paperclipRuntimeSkills: runtimeSkillEntries,
     };
     const workspaceOperationRecorder = workspaceOperationsSvc.createRecorder({

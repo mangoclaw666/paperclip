@@ -60,31 +60,6 @@ export function CompanySettings() {
   const [snippetCopied, setSnippetCopied] = useState(false);
   const [snippetCopyDelightId, setSnippetCopyDelightId] = useState(0);
 
-  const [resyncOutput, setResyncOutput] = useState<string | null>(null);
-  const [openError, setOpenError] = useState<string | null>(null);
-
-  const openSourceMutation = useMutation({
-    mutationFn: (target: "hub" | "workspace") =>
-      companiesApi.openExternalSource(selectedCompanyId!, target),
-    onSuccess: () => { setOpenError(null); },
-    onError: (err: unknown) => {
-      setOpenError(err instanceof Error ? err.message : "Failed to open folder");
-    },
-  });
-
-  const resyncMutation = useMutation({
-    mutationFn: () => companiesApi.resyncExternalSource(selectedCompanyId!),
-    onSuccess: (result) => {
-      const head = `[exit ${result.exitCode}]`;
-      const body = (result.stdout || "(no stdout)") + (result.stderr ? `\n--- stderr ---\n${result.stderr}` : "");
-      setResyncOutput(`${head}\n${body}`);
-      queryClient.invalidateQueries({ queryKey: queryKeys.companies.all });
-    },
-    onError: (err: unknown) => {
-      setResyncOutput(err instanceof Error ? `Error: ${err.message}` : "Resync failed");
-    },
-  });
-
   const attachmentMaxBytes = Number.parseInt(attachmentMaxMiB, 10) * BYTES_PER_MIB;
   const attachmentMaxValid =
     Number.isInteger(attachmentMaxBytes)
@@ -296,75 +271,6 @@ export function CompanySettings() {
           </Field>
         </div>
       </div>
-
-      {/* External Source */}
-      {selectedCompany.externalSource && (
-        <div className="space-y-4">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            External Source
-          </div>
-          <div className="space-y-3 rounded-md border border-border px-4 py-4">
-            <div className="space-y-1 text-sm">
-              <div>
-                <span className="text-muted-foreground">Source: </span>
-                <code className="text-xs">{selectedCompany.externalSource.rootPath}</code>
-              </div>
-              {selectedCompany.externalSource.workspacePath && (
-                <div>
-                  <span className="text-muted-foreground">Workspace: </span>
-                  <code className="text-xs">{selectedCompany.externalSource.workspacePath}</code>
-                </div>
-              )}
-              <div>
-                <span className="text-muted-foreground">Last synced: </span>
-                <span className="text-xs">
-                  {selectedCompany.externalSource.lastSyncedAt
-                    ? new Date(selectedCompany.externalSource.lastSyncedAt).toLocaleString()
-                    : "never"}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => openSourceMutation.mutate("hub")}
-                disabled={openSourceMutation.isPending}
-              >
-                Open folder
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => openSourceMutation.mutate("workspace")}
-                disabled={openSourceMutation.isPending || !selectedCompany.externalSource.workspacePath}
-              >
-                Open workspace
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => resyncMutation.mutate()}
-                disabled={resyncMutation.isPending || !selectedCompany.externalSource.syncCommand}
-              >
-                {resyncMutation.isPending ? "Re-syncing..." : "Re-sync now"}
-              </Button>
-            </div>
-            {openError && (
-              <div className="text-xs text-destructive">{openError}</div>
-            )}
-            {resyncOutput && (
-              <pre className="max-h-64 overflow-auto rounded-md bg-muted px-3 py-2 text-xs whitespace-pre-wrap">
-                {resyncOutput}
-              </pre>
-            )}
-            {!selectedCompany.externalSource.syncCommand && (
-              <div className="text-xs text-muted-foreground">
-                No syncCommand set. Re-sync is disabled until the source has a command configured.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Appearance */}
       <div className="space-y-4">

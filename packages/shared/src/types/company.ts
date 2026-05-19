@@ -27,6 +27,9 @@ export interface Company {
   feedbackDataSharingTermsVersion: string | null;
   brandColor: string | null;
   externalSource?: CompanyExternalSource | null;
+  sharedInstructions?: string | null;
+  bootstrapTemplate?: string | null;
+  heartbeatTemplate?: string | null;
   logoAssetId: string | null;
   logoUrl: string | null;
   createdAt: Date;

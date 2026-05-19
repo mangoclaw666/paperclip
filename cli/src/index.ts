@@ -23,7 +23,7 @@ import { applyDataDirOverride, type DataDirOptionLike } from "./config/data-dir.
 import { loadPaperclipEnvFile } from "./config/env.js";
 import { initTelemetryFromConfigFile, flushTelemetry } from "./telemetry.js";
 import { registerWorktreeCommands } from "./commands/worktree.js";
-import { registerHubCommands } from "./commands/hub.js";
+import { registerProjectCommands } from "./commands/hub.js";
 import { registerPluginCommands } from "./commands/client/plugin.js";
 import { registerClientAuthCommands } from "./commands/client/auth.js";
 import { cliVersion } from "./version.js";
@@ -151,7 +151,7 @@ registerRoutineCommands(program);
 registerFeedbackCommands(program);
 registerSecretCommands(program);
 registerWorktreeCommands(program);
-registerHubCommands(program);
+registerProjectCommands(program);
 registerEnvLabCommands(program);
 registerPluginCommands(program);
 
