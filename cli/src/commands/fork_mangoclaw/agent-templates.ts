@@ -1,3 +1,4 @@
+// fork_mangoclaw: baseline 4-file agent templates (leadership / default).
 /**
  * Baseline agent instruction templates.
  *

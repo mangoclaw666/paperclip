@@ -7096,6 +7096,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       runScopedMentionedSkillKeys,
     );
     const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(agent.companyId);
+    // fork_mangoclaw: company-level agent prompt defaults — agent 가 자체 promptTemplate / bootstrapPromptTemplate 가 없으면 company 단위 fallback. Settings 의 Agent Prompts 페이지가 이 default 박는 자리.
     // Apply company-level agent prompt defaults when the agent itself has not
     // set a per-agent override. Lets a single Settings page configure language /
     // protocol prompts for every agent in a company.

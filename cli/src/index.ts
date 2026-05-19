@@ -23,7 +23,8 @@ import { applyDataDirOverride, type DataDirOptionLike } from "./config/data-dir.
 import { loadPaperclipEnvFile } from "./config/env.js";
 import { initTelemetryFromConfigFile, flushTelemetry } from "./telemetry.js";
 import { registerWorktreeCommands } from "./commands/worktree.js";
-import { registerProjectCommands } from "./commands/hub.js";
+// fork_mangoclaw: top-level init/sync/add-agent CLI commands
+import { registerProjectCommands } from "./commands/fork_mangoclaw/ops.js";
 import { registerPluginCommands } from "./commands/client/plugin.js";
 import { registerClientAuthCommands } from "./commands/client/auth.js";
 import { cliVersion } from "./version.js";

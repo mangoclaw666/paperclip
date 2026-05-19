@@ -34,6 +34,7 @@ export const companies = pgTable(
     feedbackDataSharingConsentByUserId: text("feedback_data_sharing_consent_by_user_id"),
     feedbackDataSharingTermsVersion: text("feedback_data_sharing_terms_version"),
     brandColor: text("brand_color"),
+    // fork_mangoclaw: externalSource + agent prompt defaults columns. migrations 0086 + 0087. CompanyExternalSource type 도 같은 fork.
     externalSource: jsonb("external_source").$type<CompanyExternalSource>(),
     sharedInstructions: text("shared_instructions"),
     bootstrapTemplate: text("bootstrap_template"),

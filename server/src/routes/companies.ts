@@ -357,6 +357,7 @@ export function companyRoutes(db: Db, storage?: StorageService) {
     res.json(company);
   });
 
+  // fork_mangoclaw: externalSource — dashboard 의 회사 Settings 에서 폴더 열기·Re-sync 버튼 + workspace path 표시용. Workspace Bridge plugin (packages/plugins/paperclip-plugin-hub-extensions) 의 UI 가 이 endpoint 들을 호출.
   function requireLocalImplicit(req: Request) {
     if (req.actor.type !== "board" || req.actor.source !== "local_implicit") {
       throw forbidden("Available only in local trusted mode");
