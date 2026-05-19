@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
 import {
   projects,
@@ -8,6 +8,7 @@ import {
   plugins,
   projectWorkspaces,
   workspaceRuntimeServices,
+  companies,
 } from "@paperclipai/db";
 import {
   PROJECT_COLORS,
@@ -480,11 +481,44 @@ export function projectService(db: Db) {
     // Also write goalId to the legacy column (first goal or null)
     const legacyGoalId = ids && ids.length > 0 ? ids[0] : projectData.goalId ?? null;
 
-    const row = await db
-      .insert(projects)
-      .values({ ...projectData, goalId: legacyGoalId, companyId })
-      .returning()
-      .then((rows) => rows[0]);
+    // fork_mangoclaw: auto-assign identifier + sort_order inside a transaction.
+    // Mirrors the issues.ts pattern (issues.ts:4165-4182) — same self-correcting
+    // counter, same `${prefix}-${number}` shape. Projects use 2-digit zero-pad
+    // ("MK-01") vs issues' 3-digit ("MAK-001") per Monday's convention.
+    const row = await db.transaction(async (tx) => {
+      const [maxRow] = await tx
+        .select({ maxNum: sql<number>`coalesce(max(${projects.projectNumber}), 0)` })
+        .from(projects)
+        .where(eq(projects.companyId, companyId));
+      const currentMax = maxRow?.maxNum ?? 0;
+
+      const [company] = await tx
+        .update(companies)
+        .set({ projectCounter: sql`greatest(${companies.projectCounter}, ${currentMax}) + 1` })
+        .where(eq(companies.id, companyId))
+        .returning({ projectCounter: companies.projectCounter, projectPrefix: companies.projectPrefix });
+
+      const projectNumber = company?.projectCounter ?? currentMax + 1;
+      const prefix = company?.projectPrefix ?? "PRJ";
+      const padded = String(projectNumber).padStart(2, "0");
+      const identifier = `${prefix}-${padded}`;
+
+      // sort_order: append to end with sparse increment (10) for easy reorder.
+      let sortOrder = (projectData as { sortOrder?: number | null }).sortOrder;
+      if (sortOrder === undefined || sortOrder === null) {
+        const [maxSortRow] = await tx
+          .select({ maxSort: sql<number>`coalesce(max(${projects.sortOrder}), 0)` })
+          .from(projects)
+          .where(eq(projects.companyId, companyId));
+        sortOrder = (maxSortRow?.maxSort ?? 0) + 10;
+      }
+
+      const [inserted] = await tx
+        .insert(projects)
+        .values({ ...projectData, goalId: legacyGoalId, companyId, projectNumber, identifier, sortOrder })
+        .returning();
+      return inserted;
+    });
 
     if (ids && ids.length > 0) {
       await syncGoalLinks(db, row.id, companyId, ids);
@@ -510,7 +544,12 @@ export function projectService(db: Db) {
 
   return {
     list: async (companyId: string): Promise<ProjectWithGoals[]> => {
-      const rows = await db.select().from(projects).where(eq(projects.companyId, companyId)).orderBy(asc(projects.createdAt));
+      // fork_mangoclaw: sort_order first (user-controllable), createdAt as tiebreaker.
+      const rows = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.companyId, companyId))
+        .orderBy(asc(projects.sortOrder), asc(projects.createdAt));
       const withGoals = await attachGoals(db, rows);
       return attachWorkspaces(db, withGoals);
     },

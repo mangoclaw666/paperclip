@@ -38,6 +38,11 @@ export const updateCompanySchema = createCompanySchema
     sharedInstructions: z.string().nullable().optional(),
     bootstrapTemplate: z.string().nullable().optional(),
     heartbeatTemplate: z.string().nullable().optional(),
+    // fork_mangoclaw: project + goal identifier prefix/counter (migration 0088).
+    projectPrefix: z.string().nullable().optional(),
+    projectCounter: z.number().int().nonnegative().optional(),
+    goalPrefix: z.string().nullable().optional(),
+    goalCounter: z.number().int().nonnegative().optional(),
   });
 
 export type UpdateCompany = z.infer<typeof updateCompanySchema>;

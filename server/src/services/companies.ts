@@ -56,6 +56,11 @@ export function companyService(db: Db) {
     sharedInstructions: companies.sharedInstructions,
     bootstrapTemplate: companies.bootstrapTemplate,
     heartbeatTemplate: companies.heartbeatTemplate,
+    // fork_mangoclaw: project + goal identifier prefix/counter (migration 0088).
+    projectPrefix: companies.projectPrefix,
+    projectCounter: companies.projectCounter,
+    goalPrefix: companies.goalPrefix,
+    goalCounter: companies.goalCounter,
     logoAssetId: companyLogos.assetId,
     createdAt: companies.createdAt,
     updatedAt: companies.updatedAt,

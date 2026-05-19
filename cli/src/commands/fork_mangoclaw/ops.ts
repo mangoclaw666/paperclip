@@ -54,8 +54,14 @@ interface GoalEntry {
 }
 
 function parseFrontmatter(text: string): { meta: Record<string, unknown>; body: string } {
-  const m = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!m) return { meta: {}, body: text };
+  // Normalize CRLF → LF so files saved on Windows with `\r\n` line endings
+  // parse identically to LF files. Without this, the regex below matches `\n`
+  // but the file has `\r\n`, the whole frontmatter block fails to extract,
+  // and downstream `meta.name` falls through to the slug — producing dup
+  // entities on every sync (title mismatch from "raw slug" vs "real name").
+  const normalized = text.replace(/\r\n/g, "\n");
+  const m = normalized.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!m) return { meta: {}, body: normalized };
   const meta: Record<string, unknown> = {};
   for (const line of m[1].split("\n")) {
     const kv = line.match(/^([A-Za-z_][\w-]*)\s*:\s*(.*)$/);
@@ -201,8 +207,15 @@ function buildDescriptionWithMarker(slug: string, kind: "goal" | "project" | "is
  */
 function cleanTitle(raw: string): string {
   let t = (raw || "").trim();
-  if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
-    t = t.slice(1, -1);
+  // Strip outer quotes iteratively — covers nested forms like `'"title"'`
+  // produced when YAML uses single quotes to wrap a string containing
+  // double quotes (e.g. `name: '"오늘의 프로젝트" 로직'`).
+  for (let i = 0; i < 3; i++) {
+    if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+      t = t.slice(1, -1).trim();
+    } else {
+      break;
+    }
   }
   return t.replace(/\\"/g, '"').replace(/\\'/g, "'").trim();
 }
@@ -229,6 +242,21 @@ interface TaskSpec {
   bodyText: string;
 }
 
+/**
+ * Project status enum normalization. PaperClip accepts
+ * `backlog / planned / in_progress / completed / cancelled` only; markdown
+ * in the wild often uses issue-style values (`done`, `todo`, `blocked`) from
+ * older migrations.
+ */
+function normalizeProjectStatus(raw: string | null | undefined): string {
+  const s = (raw ?? "").trim().toLowerCase();
+  if (["backlog", "planned", "in_progress", "completed", "cancelled"].includes(s)) return s;
+  if (s === "done" || s === "achieved") return "completed";
+  if (s === "todo") return "backlog";
+  if (s === "blocked" || s === "active") return "in_progress";
+  return "planned";
+}
+
 async function collectProjects(paperclipDir: string): Promise<ProjectSpec[]> {
   const dir = path.join(paperclipDir, "projects");
   let entries: string[];
@@ -246,7 +274,7 @@ async function collectProjects(paperclipDir: string): Promise<ProjectSpec[]> {
       slug,
       name: cleanTitle(String(meta.name ?? slug)),
       description: body || "",
-      status: String(meta.status ?? "in_progress"),
+      status: normalizeProjectStatus(meta.status as string | undefined),
       goalSlug: (meta.goal_slug && String(meta.goal_slug).trim()) ? String(meta.goal_slug) : null,
       assigneeAgentSlug: (meta.assignee_agent_slug && String(meta.assignee_agent_slug).trim()) ? String(meta.assignee_agent_slug) : null,
       bodyText: body,

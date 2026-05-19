@@ -30,6 +30,11 @@ export interface Company {
   sharedInstructions?: string | null;
   bootstrapTemplate?: string | null;
   heartbeatTemplate?: string | null;
+  // fork_mangoclaw: project + goal identifier prefix/counter (migration 0088).
+  projectPrefix?: string | null;
+  projectCounter?: number;
+  goalPrefix?: string | null;
+  goalCounter?: number;
   logoAssetId: string | null;
   logoUrl: string | null;
   createdAt: Date;

@@ -39,6 +39,11 @@ export const companies = pgTable(
     sharedInstructions: text("shared_instructions"),
     bootstrapTemplate: text("bootstrap_template"),
     heartbeatTemplate: text("heartbeat_template"),
+    // fork_mangoclaw: project + goal identifier prefix/counter — mirror of issue_prefix/issue_counter. migrations 0088.
+    projectPrefix: text("project_prefix").default("PRJ"),
+    projectCounter: integer("project_counter").notNull().default(0),
+    goalPrefix: text("goal_prefix").default(""),
+    goalCounter: integer("goal_counter").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

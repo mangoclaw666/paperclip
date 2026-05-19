@@ -108,6 +108,11 @@ const projectFields = {
   env: envConfigSchema.optional().nullable(),
   executionWorkspacePolicy: projectExecutionWorkspacePolicySchema.optional().nullable(),
   archivedAt: z.string().datetime().optional().nullable(),
+  // fork_mangoclaw: manual sort_order (server defaults to next slot if omitted).
+  sortOrder: z.number().int().optional(),
+  // fork_mangoclaw: identifier + project_number — see goal.ts comment.
+  identifier: z.string().optional().nullable(),
+  projectNumber: z.number().int().optional().nullable(),
 };
 
 export const createProjectSchema = z.object({
