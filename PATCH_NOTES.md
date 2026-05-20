@@ -134,3 +134,72 @@ The companion test project `D:/00_WorkSpace/51_coffee-lab` (separate repo, not p
 6. Click "Open folder" — OS file explorer opens at `_hub/`.
 7. Click "Re-sync now" — output appears in the log box, `lastSyncedAt` updates.
 8. (Negative) In `authenticated` deployment mode, the section's buttons are gated and the API returns 403.
+
+---
+
+# PATCH_NOTES — feature/eco-mode (overlay)
+
+> 별도 변경 묶음. dashboard-external-source 와 무관. 같이 commit 되어 있을 뿐.
+
+## TL;DR
+
+`heartbeat.ecoMode = true` 로 켜면, timer wake 시 LLM 호출 직전에 cheap SQL diff 로 변화 점검 → 변화 없으면 LLM spawn 안 함. idle agent 의 cost burn 을 0 에 가깝게.
+
+## Why
+
+PaperClip Native (claude_local 등) 는 매 cycle 마다 LLM 호출 → idle agent (inbox 0) 도 prompt cache create 비용 발생. Opus 모델 + 5분 cycle 운영 시 시간당 $15~25 / agent 까지 burn. 옛 brain.py 시대에 cron 이 `has_changes()` 로 file mtime + count 만 보고 변화 없으면 LLM skip 한 패턴을 PaperClip DB schema 로 옮긴 것.
+
+## What changed
+
+### 새 모듈: `server/src/services/eco-mode.ts`
+
+Pure functions (DB 의존만):
+- `loadEcoSnapshot(stateJson)` — `agentRuntimeState.stateJson.lastEcoSnapshot` 파싱
+- `buildEcoSnapshot(now)` — `{ version: 1, checkedAt: ISO }` 객체 생성
+- `saveEcoSnapshot(db, agentId, snapshot)` — jsonb `||` merge (다른 키 보존)
+- `detectChangesForEcoMode(db, agent, lastSnapshot, opts)` — 5가지 분기:
+  1. `first_wake` (snapshot=null)
+  2. `snapshot_invalid` (NaN checkedAt)
+  3. `max_idle_exceeded` (now − checkedAt > maxIdleHours)
+  4. 변화 시그널 3종 — `issue_changed` / `new_comment` / `external_wakeup`
+  5. `no_signals` — skip
+
+마이그레이션 0개 (jsonb free-form 활용).
+
+### `heartbeat.ts` 변경
+
+- `parseHeartbeatPolicy` 에 `ecoMode: boolean` (default false) + `maxEcoIdleHours: number` (default 6) 필드 추가
+- `enqueueWakeup` 의 timer 분기 (기존 `heartbeat.disabled` skip 옆) 에 eco-mode gate 추가
+  - source != "timer" (assignment / on_demand / automation / mention) 는 게이트 우회 → cascade 보장
+  - 변화 없음 → `writeSkippedRequest("eco.no_changes:<reason>")` (기존 skipped 패턴 재사용)
+  - 변화 있음 → snapshot 저장 + 정상 enqueue
+
+### 새 테스트: `server/src/__tests__/heartbeat-eco-mode.test.ts`
+
+embedded postgres 기반 12 시나리오 — 코덱 round-trip, snapshot merge 보존, first wake, invalid snapshot, max idle, no signals, issue changed, issue 다른 assignee, new comment, external wakeup, timer self-noise 제외. 12/12 PASS.
+
+### UI
+
+`ui/src/components/AgentConfigForm.tsx` 의 "Advanced Run Policy" 섹션에 토글 추가:
+- "Eco mode (skip wake when nothing changed)" 체크박스
+- 켜면 "Max idle hours (safety wake)" 입력 노출 (default 6)
+
+`agent-config-primitives.tsx` 의 `help` 에 hint 2개 추가.
+
+## Out of scope / future work
+
+- **Director 의 자율 cascade 시그널** — 현재 Director 도 ecoMode 켜면 본인 inbox 변화만 봄. 회사 전체 시그널 (KR 측정 변화, Backlog promote 후보) 추가하면 Director 도 절약 가능. Default `ecoMode=false` 라 운영자가 명시적으로 켜는 동안만 영향.
+- **Plugin SDK 의 `onBeforeAgentWake` hook** — eco-mode 가 본체에 들어가는 게 더 자연스럽지만, 같은 패턴을 plugin 으로 노출하려면 SDK 확장 필요.
+- **드리프트 모니터** — `eco.no_changes:<reason>` 의 distribution 을 dashboard 에서 시각화.
+
+## Verification
+
+1. `pnpm --filter @paperclipai/server typecheck` — PASS
+2. `pnpm --filter @paperclipai/ui typecheck` — PASS
+3. `cd server && npx vitest run heartbeat-eco-mode` — 12/12 PASS
+4. (운영 검증) Make 회사에서 4 default agent ecoMode=true 로 켠 후 24h burn 측정 — 본 PR 후속.
+
+## Upstream PR 후보
+
+- 마이그레이션 0개, 새 file 2개, heartbeat.ts patch ~30 줄. 격리도 높음.
+- `fork_mangoclaw:` 마커는 PR 보낼 때 영어로 정리 + 제거.

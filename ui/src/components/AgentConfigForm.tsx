@@ -1253,6 +1253,35 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                   className={inputClass}
                 />
               </Field>
+              {/* fork_mangoclaw: eco-mode UI — skip LLM spawn when nothing changed since last cycle */}
+              <div className="rounded-md border border-border/70 px-3 py-2">
+                <ToggleField
+                  label="Eco mode (skip wake when nothing changed)"
+                  hint={help.ecoMode}
+                  checked={eff(
+                    "heartbeat",
+                    "ecoMode",
+                    heartbeat.ecoMode === true,
+                  )}
+                  onChange={(v) => mark("heartbeat", "ecoMode", v)}
+                />
+                {eff("heartbeat", "ecoMode", heartbeat.ecoMode === true) ? (
+                  <div className="mt-3">
+                    <Field label="Max idle hours (safety wake)" hint={help.maxEcoIdleHours}>
+                      <DraftNumberInput
+                        value={eff(
+                          "heartbeat",
+                          "maxEcoIdleHours",
+                          Number(heartbeat.maxEcoIdleHours ?? 6),
+                        )}
+                        onCommit={(v) => mark("heartbeat", "maxEcoIdleHours", v)}
+                        immediate
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+                ) : null}
+              </div>
               <div className="rounded-md border border-border/70 px-3 py-2">
                 <ToggleField
                   label="Continue after max-turn stop"

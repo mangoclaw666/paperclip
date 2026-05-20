@@ -56,6 +56,9 @@ export const help: Record<string, string> = {
   wakeOnDemand: "Allow this agent to be woken by assignments, API calls, UI actions, or automated systems.",
   cooldownSec: "Minimum seconds between consecutive heartbeat runs.",
   maxConcurrentRuns: "Maximum number of heartbeat runs that can execute simultaneously for this agent.",
+  // fork_mangoclaw: eco-mode UI hints
+  ecoMode: "Skip the LLM spawn on a timer wake if nothing changed since the last cycle (no new comments, no assignment changes, no external wakeups). Saves cost for idle agents. Non-timer wakes (assignments / mentions / on-demand) bypass this gate.",
+  maxEcoIdleHours: "Force a wake at least this often even if nothing changed. Safety valve so eco-mode agents don't sleep forever. Default 6 hours; 0 disables the safety valve.",
   maxTurnContinuationEnabled: "Automatically queue bounded continuation runs when an adapter stops because its per-run turn cap was exhausted.",
   maxTurnContinuationMaxAttempts: "Maximum automatic continuations after one max-turn stop. This is separate from max turns per run.",
   maxTurnContinuationDelaySec: "Seconds to wait before starting each max-turn continuation.",

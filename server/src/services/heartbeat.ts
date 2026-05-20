@@ -93,6 +93,12 @@ import {
   sanitizeRuntimeServiceBaseEnv,
 } from "./workspace-runtime.js";
 import { issueService } from "./issues.js";
+// fork_mangoclaw: eco-mode — has-changes gate to skip idle timer wakes.
+import {
+  detectChangesForEcoMode,
+  loadEcoSnapshot,
+  saveEcoSnapshot,
+} from "./eco-mode.js";
 import {
   buildIssueMonitorClearedPatch,
   buildIssueMonitorTriggeredPatch,
@@ -5727,6 +5733,10 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       intervalSec: Math.max(0, asNumber(heartbeat.intervalSec, 0)),
       wakeOnDemand: asBoolean(heartbeat.wakeOnDemand ?? heartbeat.wakeOnAssignment ?? heartbeat.wakeOnOnDemand ?? heartbeat.wakeOnAutomation, true),
       maxConcurrentRuns: normalizeMaxConcurrentRuns(heartbeat.maxConcurrentRuns),
+      // fork_mangoclaw: eco-mode — skip LLM spawn when nothing changed since last cycle.
+      // Default off (opt-in). See services/eco-mode.ts.
+      ecoMode: asBoolean(heartbeat.ecoMode, false),
+      maxEcoIdleHours: Math.max(0, asNumber(heartbeat.maxEcoIdleHours, 6)),
     };
   }
 
@@ -8694,6 +8704,31 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     if (source !== "timer" && !policy.wakeOnDemand) {
       await writeSkippedRequest("heartbeat.wakeOnDemand.disabled");
       return null;
+    }
+
+    // fork_mangoclaw: eco-mode gate — skip timer wake when nothing changed since
+    // last cycle. Cheap SQL diff against snapshot; LLM spawn is only paid for
+    // when there is real work. Non-timer sources (assignment / on_demand /
+    // automation / mention) bypass this gate so cascade & board interaction
+    // remain instant.
+    if (source === "timer" && policy.ecoMode) {
+      const runtimeState = await ensureRuntimeState(agent);
+      const lastSnapshot = loadEcoSnapshot(runtimeState.stateJson);
+      const ecoCheck = await detectChangesForEcoMode(db, agent, lastSnapshot, {
+        maxIdleHours: policy.maxEcoIdleHours,
+      });
+      if (!ecoCheck.hasChanges) {
+        await writeSkippedRequest(`eco.no_changes:${ecoCheck.reason}`);
+        return null;
+      }
+      // Persist the snapshot now so the same change isn't re-triggered on
+      // a concurrent timer fire. Subsequent changes will still be picked up
+      // (their updated_at > checkedAt).
+      await saveEcoSnapshot(db, agent.id, ecoCheck.nextSnapshot);
+      enrichedContextSnapshot.ecoMode = {
+        triggeredBy: ecoCheck.reason,
+        checkedAt: ecoCheck.nextSnapshot.checkedAt,
+      };
     }
 
     if (issueId) {
