@@ -189,7 +189,7 @@ export function NewGoalDialog() {
           <Popover open={statusOpen} onOpenChange={setStatusOpen}>
             <PopoverTrigger asChild>
               <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent/50 transition-colors">
-                <StatusBadge status={status} />
+                <StatusBadge status={status} ns="goal" />
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-40 p-1" align="start">

@@ -8,6 +8,7 @@ import {
 } from "../../components/agent-config-primitives";
 import { ChoosePathButton } from "../../components/PathInstructionsModal";
 import { LocalWorkspaceRuntimeFields } from "../local-workspace-runtime-fields";
+import { useTranslation } from "@/i18n";
 
 const inputClass =
   "w-full rounded-md border border-border px-2.5 py-1.5 bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/40";
@@ -78,10 +79,11 @@ export function ClaudeLocalAdvancedFields({
   eff,
   mark,
 }: AdapterConfigFieldsProps) {
+  const { t } = useTranslation();
   return (
     <>
       <ToggleField
-        label="Enable Chrome"
+        label={t("agentConfig.field.enableChrome", { defaultValue: "Enable Chrome" })}
         hint={help.chrome}
         checked={
           isCreate
@@ -95,7 +97,7 @@ export function ClaudeLocalAdvancedFields({
         }
       />
       <ToggleField
-        label="Skip permissions"
+        label={t("agentConfig.field.skipPermissions", { defaultValue: "Skip permissions" })}
         hint={help.dangerouslySkipPermissions}
         checked={
           isCreate
@@ -112,7 +114,7 @@ export function ClaudeLocalAdvancedFields({
             : mark("adapterConfig", "dangerouslySkipPermissions", v)
         }
       />
-      <Field label="Max turns per run" hint={help.maxTurnsPerRun}>
+      <Field label={t("agentConfig.field.maxTurns", { defaultValue: "Max turns per run" })} hint={help.maxTurnsPerRun}>
         {isCreate ? (
           <input
             type="number"

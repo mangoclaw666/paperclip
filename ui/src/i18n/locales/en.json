@@ -5,5 +5,630 @@
       "description": "Get started by creating a company.",
       "newCompany": "New Company"
     }
+  },
+  "nav": {
+    "newIssue": "New Issue",
+    "dashboard": "Dashboard",
+    "inbox": "Inbox",
+    "issues": "Issues",
+    "routines": "Routines",
+    "goals": "Goals",
+    "workspaces": "Workspaces",
+    "org": "Org",
+    "skills": "Skills",
+    "costs": "Costs",
+    "activity": "Activity",
+    "settings": "Settings",
+    "newProject": "New project",
+    "browseProjects": "Browse projects",
+    "newAgent": "New agent",
+    "browseAgents": "Browse agents",
+    "section": {
+      "work": "Work",
+      "company": "Company",
+      "projects": "Projects",
+      "agents": "Agents"
+    }
+  },
+  "agentDetail": {
+    "runPrefix": "Run",
+    "tab": {
+      "dashboard": "Dashboard",
+      "instructions": "Instructions",
+      "skills": "Skills",
+      "configuration": "Configuration",
+      "runs": "Runs",
+      "budget": "Budget"
+    },
+    "action": {
+      "assignTask": "Assign Task",
+      "runHeartbeat": "Run Heartbeat",
+      "copyAgentId": "Copy Agent ID",
+      "resetSessions": "Reset Sessions",
+      "terminate": "Terminate"
+    }
+  },
+  "agentConfig": {
+    "section": {
+      "identity": "Identity",
+      "execution": "Execution",
+      "adapter": "Adapter",
+      "permissions": "Permissions & Configuration",
+      "runPolicy": "Run Policy",
+      "advancedRunPolicy": "Advanced Run Policy"
+    },
+    "field": {
+      "name": "Name",
+      "title": "Title",
+      "reportsTo": "Reports to",
+      "capabilities": "Capabilities",
+      "adapterType": "Adapter type",
+      "workingDirectory": "Working directory (deprecated)",
+      "command": "Command",
+      "model": "Model",
+      "thinkingEffort": "Thinking effort",
+      "extraArgs": "Extra args (comma-separated)",
+      "envVars": "Environment variables",
+      "timeoutSec": "Timeout (sec)",
+      "graceSec": "Interrupt grace period (sec)",
+      "heartbeatOnInterval": "Heartbeat on interval",
+      "enableChrome": "Enable Chrome",
+      "skipPermissions": "Skip permissions",
+      "maxTurns": "Max turns per run"
+    },
+    "placeholder": {
+      "agentName": "Agent name",
+      "titleExample": "e.g. VP of Engineering",
+      "chooseManager": "Choose manager…",
+      "describeAgent": "Describe what this agent can do...",
+      "extraArgs": "e.g. --verbose, --foo=bar"
+    },
+    "action": {
+      "test": "Test",
+      "testing": "Testing...",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "label": {
+      "primaryModel": "Primary model",
+      "cheapModel": "Cheap model",
+      "sec": "sec",
+      "runHeartbeatEvery": "Run heartbeat every"
+    },
+    "status": {
+      "unsavedChanges": "Unsaved changes"
+    },
+    "desc": {
+      "cheapModel": "Used when a run requests the cheap profile (e.g. routine summaries). The primary model stays unchanged.",
+      "cheapModelFallback": "No explicit cheap model selected — runtime falls back to",
+      "cheapModelNoDefault": "No cheap model selected and the adapter has no default. Cheap-lane runs will continue on the primary model with a fallback note."
+    }
+  },
+  "issueDetail": {
+    "tab": {
+      "chat": "Chat",
+      "activity": "Activity",
+      "relatedWork": "Related work"
+    },
+    "badge": {
+      "live": "Live",
+      "routine": "Routine",
+      "productivityReview": "Productivity review",
+      "productivityReviewTitle": "This task is a productivity review.",
+      "planning": "Planning",
+      "planningTitle": "This issue is in planning mode.",
+      "blockedByParkedWork": "Blocked by parked work",
+      "blockedByParkedWorkTitle": "Blocked by parked work — at least one assigned blocker is in backlog and will not wake its assignee.",
+      "noProject": "No project"
+    },
+    "state": {
+      "hidden": "This issue is hidden",
+      "noCostData": "No cost data yet."
+    },
+    "section": {
+      "attachments": "Attachments",
+      "properties": "Properties",
+      "costSummary": "Cost Summary",
+      "subIssues": "Sub-issues"
+    },
+    "action": {
+      "backToInbox": "Back to inbox",
+      "archiveFromInbox": "Archive from inbox",
+      "moreActions": "More actions",
+      "copyAsMarkdown": "Copy issue as markdown",
+      "copyAsMarkdownShort": "Copy as markdown",
+      "showProperties": "Show properties",
+      "properties": "Properties",
+      "hideIssue": "Hide this Issue",
+      "pauseWork": "Pause work...",
+      "pauseWorkShort": "Pause work",
+      "pausing": "Pausing...",
+      "resumeWork": "Resume work",
+      "pauseSubtree": "Pause subtree...",
+      "resumeSubtree": "Resume subtree",
+      "cancelSubtree": "Cancel subtree...",
+      "restoreSubtree": "Restore subtree...",
+      "viewAffected": "View affected",
+      "close": "Close",
+      "applying": "Applying...",
+      "retryPreview": "Retry preview",
+      "uploadAttachment": "Upload attachment",
+      "upload": "Upload",
+      "uploading": "Uploading...",
+      "deleteAttachment": "Delete attachment",
+      "newSubIssue": "New Sub-issue"
+    },
+    "placeholder": {
+      "addDescription": "Add a description..."
+    },
+    "dialog": {
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "Explain why this subtree control is being applied...",
+      "wakeAgents": "Wake affected agents"
+    },
+    "confirm": {
+      "delete": "Delete?",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "chat": {
+      "loadEarlier": "Load earlier comments",
+      "loadingEarlier": "Loading earlier comments..."
+    },
+    "costSummary": {
+      "thisIssue": "This issue"
+    }
+  },
+  "issues": {
+    "breadcrumb": {
+      "issues": "Issues"
+    },
+    "emptyState": {
+      "selectCompany": "Select a company to view issues."
+    }
+  },
+  "issuesList": {
+    "search": {
+      "placeholder": "Search issues...",
+      "ariaLabel": "Search issues",
+      "resultLimit": "Showing up to {{limit}} matches. Refine the search to narrow further."
+    },
+    "progress": {
+      "done": "done",
+      "inProgress": "in progress",
+      "blocked": "blocked",
+      "tokens": "tokens",
+      "runtime": "runtime",
+      "runCount": "run(s)",
+      "subIssueCount": "sub-issue(s)",
+      "progressBarAriaLabel": "Sub-issues completion progress",
+      "nextUp": "Next up",
+      "waitingOnBlockers": "Waiting on blockers",
+      "noActiveSubIssues": "No active sub-issues",
+      "allSubIssuesDone": "All sub-issues done",
+      "noActionableSubIssues": "No actionable sub-issues"
+    },
+    "toolbar": {
+      "createIssue": "Create Issue",
+      "createCustom": "Create {{label}}",
+      "newIssue": "New Issue",
+      "newCustom": "New {{label}}",
+      "listView": "List view",
+      "boardView": "Board view",
+      "enableNesting": "Enable parent-child nesting",
+      "disableNesting": "Disable parent-child nesting",
+      "columnPickerTitle": "Choose which issue columns stay visible"
+    },
+    "board": {
+      "useComfortableCards": "Use comfortable cards",
+      "useCompactCards": "Use compact cards",
+      "expandColdLanes": "Expand cold lanes",
+      "collapseColdLanes": "Collapse cold lanes",
+      "cardsPerColumn": "Cards per column",
+      "perColumn": "per column",
+      "resetDensity": "Reset board density",
+      "columnLimitReached": "Some board columns are showing up to {{limit}} issues. Refine filters or search to reveal the rest."
+    },
+    "sort": {
+      "title": "Sort",
+      "workflow": "Workflow",
+      "status": "Status",
+      "priority": "Priority",
+      "titleField": "Title",
+      "created": "Created",
+      "updated": "Updated"
+    },
+    "group": {
+      "title": "Group",
+      "status": "Status",
+      "priority": "Priority",
+      "assignee": "Assignee",
+      "project": "Project",
+      "workspace": "Workspace",
+      "parentIssue": "Parent Issue",
+      "none": "None",
+      "noWorkspace": "No Workspace",
+      "noProject": "No Project",
+      "noParent": "No Parent",
+      "unassigned": "Unassigned",
+      "newIssueIn": "New issue in {{label}}"
+    },
+    "empty": {
+      "noIssues": "No issues match the current filters or search."
+    },
+    "row": {
+      "subTask": "sub-task(s)"
+    },
+    "badge": {
+      "paused": "Paused",
+      "needsNextStep": "Needs next step",
+      "needsNextStepTitle": "This issue needs a next step"
+    },
+    "assignee": {
+      "label": "Assignee",
+      "searchPlaceholder": "Search assignees...",
+      "noAssignee": "No assignee",
+      "me": "Me"
+    },
+    "pagination": {
+      "loadingMore": "Loading more issues...",
+      "rendering": "Rendering {{rendered}} of {{total}} issues",
+      "scrollToLoad": "Scroll to load more issues"
+    }
+  },
+  "newIssue": {
+    "placeholder": {
+      "title": "Issue title",
+      "description": "Add description...",
+      "chooseWorkspace": "Choose an existing workspace"
+    },
+    "header": {
+      "newIssue": "New issue",
+      "newSubIssue": "New sub-issue"
+    },
+    "label": {
+      "for": "For",
+      "in": "in",
+      "subIssueOf": "Sub-issue of"
+    },
+    "field": {
+      "assignee": "Assignee",
+      "noAssignee": "No assignee",
+      "project": "Project",
+      "noProject": "No project",
+      "reviewer": "Reviewer",
+      "noReviewer": "No reviewer",
+      "approver": "Approver",
+      "noApprover": "No approver",
+      "priority": "Priority",
+      "startDate": "Start date",
+      "dueDate": "Due date",
+      "modelLane": "Model lane",
+      "model": "Model",
+      "defaultModel": "Default model",
+      "thinkingEffort": "Thinking effort",
+      "enableChrome": "Enable Chrome (--chrome)"
+    },
+    "search": {
+      "assignees": "Search assignees...",
+      "projects": "Search projects...",
+      "reviewers": "Search reviewers...",
+      "approvers": "Search approvers...",
+      "models": "Search models..."
+    },
+    "empty": {
+      "assignees": "No assignees found.",
+      "projects": "No projects found.",
+      "reviewers": "No reviewers found.",
+      "approvers": "No approvers found.",
+      "models": "No models found."
+    },
+    "section": {
+      "executionWorkspace": "Execution workspace",
+      "executionWorkspaceHelp": "Control whether this issue runs in the shared workspace, a new isolated workspace, or an existing one.",
+      "documents": "Documents",
+      "attachments": "Attachments"
+    },
+    "modelLane": {
+      "primary": "Primary",
+      "cheap": "Cheap",
+      "custom": "Custom",
+      "primaryHelp": "Runs on the agent's primary model.",
+      "customHelp": "Override the model and effort for this issue only."
+    },
+    "action": {
+      "addReviewerOrApprover": "Add reviewer or approver",
+      "removeDocument": "Remove document",
+      "removeAttachment": "Remove attachment",
+      "upload": "Upload",
+      "discardDraft": "Discard Draft",
+      "createIssue": "Create Issue",
+      "createSubIssue": "Create Sub-Issue",
+      "creating": "Creating..."
+    },
+    "status": {
+      "creating": "Creating issue...",
+      "backlog": "Backlog",
+      "todo": "Todo",
+      "inProgress": "In Progress"
+    },
+    "warning": {
+      "assignedBacklog": "Assigning implies executable intent — leave status as",
+      "assignedBacklogSuffix": "only to deliberately park this. The assignee will not be woken until status moves to",
+      "assignedBacklogOr": "or",
+      "parentWorkspace": "Warning: this sub-issue will no longer use the parent issue workspace"
+    },
+    "header2": "Add a new agent",
+    "recommendation": {
+      "body": "We recommend letting your CEO handle agent setup — they know the org structure and can configure reporting, permissions, and adapters."
+    },
+    "actions": {
+      "askCeo": "Ask the CEO to create a new agent",
+      "advancedConfig": "I want advanced configuration myself",
+      "back": "Back"
+    },
+    "advanced": {
+      "prompt": "Choose your adapter type for advanced setup.",
+      "recommended": "Recommended"
+    },
+    "ceoIssue": {
+      "title": "Create a new agent",
+      "description": "(type in what kind of agent you want here)"
+    }
+  },
+  "enum": {
+    "status": {
+      "issue": {
+        "backlog": "Backlog",
+        "todo": "Todo",
+        "in_progress": "In progress",
+        "blocked": "Blocked",
+        "in_review": "In review",
+        "done": "Done",
+        "cancelled": "Cancelled"
+      },
+      "project": {
+        "backlog": "Backlog",
+        "planned": "Planned",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "goal": {
+        "planned": "Planned",
+        "active": "Active",
+        "achieved": "Achieved",
+        "cancelled": "Cancelled"
+      }
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent",
+      "critical": "Critical"
+    },
+    "role": {
+      "ceo": "CEO",
+      "cto": "CTO",
+      "cmo": "CMO",
+      "cfo": "CFO",
+      "security": "Security",
+      "engineer": "Engineer",
+      "designer": "Designer",
+      "pm": "PM",
+      "qa": "QA",
+      "devops": "DevOps",
+      "researcher": "Researcher",
+      "general": "General"
+    }
+  },
+  "goalDetail": {
+    "button": {
+      "showProperties": "Show properties",
+      "addSubGoal": "Sub Goal"
+    },
+    "breadcrumb": {
+      "goals": "Goals",
+      "goal": "Goal"
+    },
+    "placeholder": {
+      "description": "Add a description..."
+    },
+    "tab": {
+      "subGoals": "Sub-goals",
+      "projects": "Projects"
+    },
+    "empty": {
+      "subGoals": "No sub-goals.",
+      "linkedProjects": "No linked projects."
+    }
+  },
+  "goals": {
+    "breadcrumb": {
+      "goals": "Goals"
+    },
+    "empty": {
+      "selectCompany": "Select a company to view goals.",
+      "noGoals": "No goals yet."
+    },
+    "button": {
+      "addGoal": "Add Goal",
+      "newGoal": "New Goal"
+    }
+  },
+  "goalTree": {
+    "empty": {
+      "noGoals": "No goals."
+    }
+  },
+  "agents": {
+    "breadcrumb": "Agents",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "paused": "Paused",
+      "error": "Error"
+    },
+    "filters": {
+      "label": "Filters",
+      "showTerminated": "Show terminated"
+    },
+    "actions": {
+      "newAgent": "New Agent"
+    },
+    "agentSingular": "agent",
+    "agentPlural": "agents",
+    "emptyState": {
+      "selectCompany": "Select a company to view agents.",
+      "noAgents": "Create your first agent to get started.",
+      "noMatch": "No agents match the selected filter.",
+      "noHierarchy": "No organizational hierarchy defined."
+    },
+    "liveRun": {
+      "label": "Live"
+    }
+  },
+  "agentProperties": {
+    "label": {
+      "status": "Status",
+      "role": "Role",
+      "title": "Title",
+      "adapter": "Adapter",
+      "session": "Session",
+      "lastError": "Last error",
+      "lastHeartbeat": "Last Heartbeat",
+      "reportsTo": "Reports To",
+      "created": "Created"
+    }
+  },
+  "projectDetail": {
+    "breadcrumb": {
+      "projects": "Projects",
+      "project": "Project"
+    },
+    "overview": {
+      "descriptionPlaceholder": "Add a description...",
+      "status": "Status",
+      "targetDate": "Target Date"
+    },
+    "colorPicker": {
+      "ariaLabel": "Change project color",
+      "selectColor": "Select color {{color}}"
+    },
+    "tab": {
+      "issues": "Issues",
+      "overview": "Overview",
+      "pluginOperations": "Plugin operations",
+      "workspaces": "Workspaces",
+      "configuration": "Configuration",
+      "budget": "Budget"
+    },
+    "badge": {
+      "pausedByBudget": "Paused by budget hard stop",
+      "managedBy": "Managed by {{pluginName}}"
+    },
+    "workspaces": {
+      "loading": "Loading workspaces..."
+    },
+    "toast": {
+      "archived": "\"{{name}}\" has been archived",
+      "unarchived": "\"{{name}}\" has been unarchived",
+      "archiveFailed": "Failed to archive project",
+      "unarchiveFailed": "Failed to unarchive project"
+    }
+  },
+  "projectProperties": {
+    "saveIndicator": {
+      "saving": "Saving",
+      "saved": "Saved",
+      "failed": "Failed"
+    },
+    "field": {
+      "name": "Name",
+      "namePlaceholder": "Project name",
+      "description": "Description",
+      "descriptionPlaceholder": "Add a description...",
+      "noDescription": "No description",
+      "status": "Status",
+      "lead": "Lead",
+      "goals": "Goals",
+      "env": "Env",
+      "envHelp": "Applied to all runs for issues in this project. Project values override agent env on key conflicts.",
+      "created": "Created",
+      "updated": "Updated",
+      "targetDate": "Target Date"
+    },
+    "goals": {
+      "removeGoal": "Remove goal {{title}}",
+      "addGoal": "Goal",
+      "allLinked": "All goals linked."
+    },
+    "codebase": {
+      "title": "Codebase",
+      "helpAriaLabel": "Codebase help",
+      "helpTooltip": "Repo identifies the source of truth. Local folder is the default place agents write code.",
+      "repoLabel": "Repo",
+      "changeRepo": "Change repo",
+      "clearRepoAriaLabel": "Clear repo",
+      "notSet": "Not set.",
+      "setRepo": "Set repo",
+      "localFolderLabel": "Local folder",
+      "managedFolder": "Paperclip-managed folder.",
+      "changeLocalFolder": "Change local folder",
+      "setLocalFolder": "Set local folder",
+      "clearLocalFolderAriaLabel": "Clear local folder",
+      "legacyWorkspacesNote": "Additional legacy workspace records exist on this project. Paperclip is using the primary workspace as the codebase view.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "errorSaveWorkspace": "Failed to save workspace.",
+      "errorDeleteWorkspace": "Failed to delete workspace.",
+      "errorUpdateWorkspace": "Failed to update workspace.",
+      "confirmClearLocalFolder": "Clear local folder from this workspace?",
+      "confirmDeleteLocalFolder": "Delete this workspace local folder?",
+      "confirmClearRepo": "Clear repo from this workspace?",
+      "confirmDeleteRepo": "Delete this workspace repo?",
+      "errorLocalAbsPath": "Local folder must be a full absolute path.",
+      "errorRepoUrl": "Repo must use a valid GitHub or GitHub Enterprise repo URL."
+    },
+    "executionWorkspaces": {
+      "title": "Execution Workspaces",
+      "helpAriaLabel": "Execution workspaces help",
+      "helpTooltip": "Project-owned defaults for isolated issue checkouts and execution workspace behavior.",
+      "enableIsolatedCheckouts": "Enable isolated issue checkouts",
+      "enableIsolatedCheckoutsHelp": "Let issues choose between the project's primary checkout and an isolated execution workspace.",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "defaultIsolatedCheckout": "New issues default to isolated checkout",
+      "defaultIsolatedCheckoutHelp": "If disabled, new issues stay on the project's primary checkout unless someone opts in.",
+      "showAdvanced": "Show advanced checkout settings",
+      "hideAdvanced": "Hide advanced checkout settings",
+      "hostManagedImpl": "Host-managed implementation:",
+      "gitWorktree": "Git worktree",
+      "environment": "Environment",
+      "noEnvironment": "No environment",
+      "baseRef": "Base ref",
+      "branchTemplate": "Branch template",
+      "worktreeParentDir": "Worktree parent dir",
+      "provisionCommand": "Provision command",
+      "teardownCommand": "Teardown command",
+      "provisionTeardownHelp": "Provision runs inside the derived worktree before agent execution. Teardown is stored here for future cleanup flows."
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "archiveDescription": "Archive this project to hide it from the sidebar and project selectors.",
+      "unarchiveDescription": "Unarchive this project to restore it in the sidebar and project selectors.",
+      "archiving": "Archiving...",
+      "unarchiving": "Unarchiving...",
+      "confirmArchive": "Archive \"{{name}}\"?",
+      "confirmUnarchive": "Unarchive \"{{name}}\"?",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "archiveProject": "Archive project",
+      "unarchiveProject": "Unarchive project"
+    },
+    "errors": {
+      "selectCompanyForSecrets": "Select a company to create secrets"
+    }
   }
 }

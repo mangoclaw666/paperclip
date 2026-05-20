@@ -1,9 +1,634 @@
 {
   "app": {
     "noCompanies": {
-      "title": "첫 회사를 만드세요",
-      "description": "회사를 만들어 시작하세요.",
-      "newCompany": "새 회사"
+      "title": "첫 회사를 만드세요 (Create your first company)",
+      "description": "회사를 만들어 시작하세요. (Get started by creating a company.)",
+      "newCompany": "새 회사 (New Company)"
+    }
+  },
+  "nav": {
+    "newIssue": "새 이슈 (New Issue)",
+    "dashboard": "대시보드 (Dashboard)",
+    "inbox": "인박스 (Inbox)",
+    "issues": "이슈 (Issues)",
+    "routines": "루틴 (Routines)",
+    "goals": "목표 (Goals)",
+    "workspaces": "워크스페이스 (Workspaces)",
+    "org": "조직도 (Org)",
+    "skills": "스킬 (Skills)",
+    "costs": "비용 (Costs)",
+    "activity": "활동 (Activity)",
+    "settings": "설정 (Settings)",
+    "newProject": "새 프로젝트 (New project)",
+    "browseProjects": "프로젝트 둘러보기 (Browse projects)",
+    "newAgent": "새 에이전트 (New agent)",
+    "browseAgents": "에이전트 둘러보기 (Browse agents)",
+    "section": {
+      "work": "작업 (Work)",
+      "company": "회사 (Company)",
+      "projects": "프로젝트 (Projects)",
+      "agents": "에이전트 (Agents)"
+    }
+  },
+  "agentDetail": {
+    "runPrefix": "런 (Run)",
+    "tab": {
+      "dashboard": "대시보드 (Dashboard)",
+      "instructions": "지침 (Instructions)",
+      "skills": "스킬 (Skills)",
+      "configuration": "설정 (Configuration)",
+      "runs": "실행 기록 (Runs)",
+      "budget": "예산 (Budget)"
+    },
+    "action": {
+      "assignTask": "태스크 할당 (Assign Task)",
+      "runHeartbeat": "하트비트 실행 (Run Heartbeat)",
+      "copyAgentId": "에이전트 ID 복사 (Copy Agent ID)",
+      "resetSessions": "세션 초기화 (Reset Sessions)",
+      "terminate": "종료 (Terminate)"
+    }
+  },
+  "agentConfig": {
+    "section": {
+      "identity": "기본 정보 (Identity)",
+      "execution": "실행 환경 (Execution)",
+      "adapter": "어댑터 (Adapter)",
+      "permissions": "권한 및 설정 (Permissions & Configuration)",
+      "runPolicy": "실행 정책 (Run Policy)",
+      "advancedRunPolicy": "고급 실행 정책 (Advanced Run Policy)"
+    },
+    "field": {
+      "name": "이름 (Name)",
+      "title": "직함 (Title)",
+      "reportsTo": "상위 보고 (Reports to)",
+      "capabilities": "역량 (Capabilities)",
+      "adapterType": "어댑터 종류 (Adapter type)",
+      "workingDirectory": "작업 디렉터리 (Working directory, deprecated)",
+      "command": "명령어 (Command)",
+      "model": "모델 (Model)",
+      "thinkingEffort": "추론 강도 (Thinking effort)",
+      "extraArgs": "추가 인수 (Extra args, 쉼표 구분)",
+      "envVars": "환경 변수 (Environment variables)",
+      "timeoutSec": "타임아웃 (Timeout, 초)",
+      "graceSec": "인터럽트 유예 시간 (Grace period, 초)",
+      "heartbeatOnInterval": "주기적 하트비트 (Heartbeat on interval)",
+      "enableChrome": "Chrome 사용 (Enable Chrome)",
+      "skipPermissions": "권한 확인 건너뛰기 (Skip permissions)",
+      "maxTurns": "런당 최대 턴 (Max turns per run)"
+    },
+    "placeholder": {
+      "agentName": "에이전트 이름 (Agent name)",
+      "titleExample": "예: VP of Engineering",
+      "chooseManager": "상위 매니저 선택… (Choose manager…)",
+      "describeAgent": "이 에이전트가 할 수 있는 일 (Describe what this agent can do)…",
+      "extraArgs": "예: --verbose, --foo=bar"
+    },
+    "action": {
+      "test": "테스트 (Test)",
+      "testing": "테스트 중… (Testing…)",
+      "save": "저장 (Save)",
+      "saving": "저장 중… (Saving…)"
+    },
+    "label": {
+      "primaryModel": "기본 모델 (Primary model)",
+      "cheapModel": "비용 절감 모델 (Cheap model)",
+      "sec": "초 (sec)",
+      "runHeartbeatEvery": "하트비트 실행 주기 (every)"
+    },
+    "status": {
+      "unsavedChanges": "저장되지 않은 변경사항 (Unsaved changes)"
+    },
+    "desc": {
+      "cheapModel": "런이 저비용 프로필을 요청할 때 사용 (예: 루틴 요약). 기본 모델은 그대로 유지됩니다.",
+      "cheapModelFallback": "지정된 비용 절감 모델 없음 — 런타임이 다음으로 폴백합니다 (falls back to)",
+      "cheapModelNoDefault": "비용 절감 모델 미선택, 어댑터 기본값도 없음. 저비용 런은 기본 모델로 계속 실행됩니다."
+    }
+  },
+  "issueDetail": {
+    "tab": {
+      "chat": "채팅 (Chat)",
+      "activity": "활동 (Activity)",
+      "relatedWork": "관련 작업 (Related work)"
+    },
+    "badge": {
+      "live": "라이브 (Live)",
+      "routine": "루틴 (Routine)",
+      "productivityReview": "생산성 검토 (Productivity review)",
+      "productivityReviewTitle": "이 작업은 생산성 검토입니다. (This task is a productivity review.)",
+      "planning": "계획 중 (Planning)",
+      "planningTitle": "이 이슈는 계획 모드입니다. (This issue is in planning mode.)",
+      "blockedByParkedWork": "보류된 작업에 의해 차단됨 (Blocked by parked work)",
+      "blockedByParkedWorkTitle": "보류된 작업에 의해 차단됨 — 할당된 차단 항목 중 하나 이상이 백로그에 있어 담당자를 깨우지 않습니다. (Blocked by parked work)",
+      "noProject": "프로젝트 없음 (No project)"
+    },
+    "state": {
+      "hidden": "이 이슈는 숨겨져 있습니다 (This issue is hidden)",
+      "noCostData": "비용 데이터 없음 (No cost data yet.)"
+    },
+    "section": {
+      "attachments": "첨부파일 (Attachments)",
+      "properties": "속성 (Properties)",
+      "costSummary": "비용 요약 (Cost Summary)",
+      "subIssues": "하위 이슈 (Sub-issues)"
+    },
+    "action": {
+      "backToInbox": "받은 편지함으로 (Back to inbox)",
+      "archiveFromInbox": "받은 편지함에서 보관 (Archive from inbox)",
+      "moreActions": "추가 작업 (More actions)",
+      "copyAsMarkdown": "Markdown 으로 복사 (Copy as markdown)",
+      "copyAsMarkdownShort": "Markdown 으로 복사 (Copy as markdown)",
+      "showProperties": "속성 보기 (Show properties)",
+      "properties": "속성 (Properties)",
+      "hideIssue": "이 이슈 숨기기 (Hide this Issue)",
+      "pauseWork": "작업 일시정지… (Pause work…)",
+      "pauseWorkShort": "작업 일시정지 (Pause work)",
+      "pausing": "일시정지 중… (Pausing…)",
+      "resumeWork": "작업 재개 (Resume work)",
+      "pauseSubtree": "하위 트리 일시정지… (Pause subtree…)",
+      "resumeSubtree": "하위 트리 재개 (Resume subtree)",
+      "cancelSubtree": "하위 트리 취소… (Cancel subtree…)",
+      "restoreSubtree": "하위 트리 복원… (Restore subtree…)",
+      "viewAffected": "영향받은 항목 보기 (View affected)",
+      "close": "닫기 (Close)",
+      "applying": "적용 중… (Applying…)",
+      "retryPreview": "미리보기 재시도 (Retry preview)",
+      "uploadAttachment": "첨부파일 업로드 (Upload attachment)",
+      "upload": "업로드 (Upload)",
+      "uploading": "업로드 중… (Uploading…)",
+      "deleteAttachment": "첨부파일 삭제 (Delete attachment)",
+      "newSubIssue": "새 하위 이슈 (New Sub-issue)"
+    },
+    "placeholder": {
+      "addDescription": "설명을 입력하세요… (Add a description…)"
+    },
+    "dialog": {
+      "reasonLabel": "사유 (선택, Reason optional)",
+      "reasonPlaceholder": "이 하위 트리 제어를 적용하는 이유를 설명하세요… (Explain why)",
+      "wakeAgents": "영향받은 에이전트 깨우기 (Wake affected agents)"
+    },
+    "confirm": {
+      "delete": "삭제할까요? (Delete?)",
+      "yes": "예 (Yes)",
+      "no": "아니오 (No)"
+    },
+    "chat": {
+      "loadEarlier": "이전 댓글 불러오기 (Load earlier comments)",
+      "loadingEarlier": "이전 댓글 불러오는 중… (Loading earlier comments…)"
+    },
+    "costSummary": {
+      "thisIssue": "이 이슈 (This issue)"
+    }
+  },
+  "issues": {
+    "breadcrumb": {
+      "issues": "이슈 (Issues)"
+    },
+    "emptyState": {
+      "selectCompany": "이슈를 보려면 회사를 선택하세요 (Select a company to view issues.)"
+    }
+  },
+  "issuesList": {
+    "search": {
+      "placeholder": "이슈 검색… (Search issues…)",
+      "ariaLabel": "이슈 검색 (Search issues)",
+      "resultLimit": "최대 {{limit}}개 결과를 표시 중입니다. 검색어를 좁혀 보세요. (matches limit)"
+    },
+    "progress": {
+      "done": "완료 (done)",
+      "inProgress": "진행 중 (in progress)",
+      "blocked": "차단됨 (blocked)",
+      "tokens": "토큰 (tokens)",
+      "runtime": "실행 시간 (runtime)",
+      "runCount": "실행 (run)",
+      "subIssueCount": "하위 이슈 (sub-issue)",
+      "progressBarAriaLabel": "하위 이슈 완료 진행률 (Sub-issues completion progress)",
+      "nextUp": "다음 항목 (Next up)",
+      "waitingOnBlockers": "차단 해제 대기 중 (Waiting on blockers)",
+      "noActiveSubIssues": "활성 하위 이슈 없음 (No active sub-issues)",
+      "allSubIssuesDone": "모든 하위 이슈 완료 (All sub-issues done)",
+      "noActionableSubIssues": "실행 가능한 하위 이슈 없음 (No actionable sub-issues)"
+    },
+    "toolbar": {
+      "createIssue": "이슈 만들기 (Create Issue)",
+      "createCustom": "{{label}} 만들기 (Create)",
+      "newIssue": "새 이슈 (New Issue)",
+      "newCustom": "새 {{label}} (New)",
+      "listView": "목록 보기 (List view)",
+      "boardView": "보드 보기 (Board view)",
+      "enableNesting": "상하위 중첩 활성화 (Enable parent-child nesting)",
+      "disableNesting": "상하위 중첩 비활성화 (Disable parent-child nesting)",
+      "columnPickerTitle": "표시할 이슈 컬럼 선택 (Choose which issue columns stay visible)"
+    },
+    "board": {
+      "useComfortableCards": "넓은 카드 사용 (Use comfortable cards)",
+      "useCompactCards": "좁은 카드 사용 (Use compact cards)",
+      "expandColdLanes": "비활성 레인 펼치기 (Expand cold lanes)",
+      "collapseColdLanes": "비활성 레인 접기 (Collapse cold lanes)",
+      "cardsPerColumn": "열당 카드 수 (Cards per column)",
+      "perColumn": "개/열 (per column)",
+      "resetDensity": "보드 밀도 초기화 (Reset board density)",
+      "columnLimitReached": "일부 보드 열은 최대 {{limit}}개의 이슈를 표시합니다. 필터 또는 검색을 좁혀 나머지를 확인하세요. (column limit reached)"
+    },
+    "sort": {
+      "title": "정렬 (Sort)",
+      "workflow": "워크플로 (Workflow)",
+      "status": "상태 (Status)",
+      "priority": "우선순위 (Priority)",
+      "titleField": "제목 (Title)",
+      "created": "생성일 (Created)",
+      "updated": "수정일 (Updated)"
+    },
+    "group": {
+      "title": "그룹 (Group)",
+      "status": "상태 (Status)",
+      "priority": "우선순위 (Priority)",
+      "assignee": "담당자 (Assignee)",
+      "project": "프로젝트 (Project)",
+      "workspace": "워크스페이스 (Workspace)",
+      "parentIssue": "상위 이슈 (Parent Issue)",
+      "none": "없음 (None)",
+      "noWorkspace": "워크스페이스 없음 (No Workspace)",
+      "noProject": "프로젝트 없음 (No Project)",
+      "noParent": "상위 이슈 없음 (No Parent)",
+      "unassigned": "미배정 (Unassigned)",
+      "newIssueIn": "{{label}} 에 새 이슈 (New issue in group)"
+    },
+    "empty": {
+      "noIssues": "현재 필터 또는 검색 조건에 맞는 이슈가 없습니다. (No issues match the current filters or search.)"
+    },
+    "row": {
+      "subTask": "하위 작업 (sub-task)"
+    },
+    "badge": {
+      "paused": "일시정지 (Paused)",
+      "needsNextStep": "다음 단계 필요 (Needs next step)",
+      "needsNextStepTitle": "이 이슈에 다음 단계가 필요합니다 (This issue needs a next step)"
+    },
+    "assignee": {
+      "label": "담당자 (Assignee)",
+      "searchPlaceholder": "담당자 검색… (Search assignees…)",
+      "noAssignee": "담당자 없음 (No assignee)",
+      "me": "나 (Me)"
+    },
+    "pagination": {
+      "loadingMore": "이슈 더 불러오는 중… (Loading more issues…)",
+      "rendering": "{{total}}개 중 {{rendered}}개 표시 중 (rendering)",
+      "scrollToLoad": "스크롤하여 이슈 더 보기 (Scroll to load more issues)"
+    }
+  },
+  "newIssue": {
+    "placeholder": {
+      "title": "이슈 제목 (Issue title)",
+      "description": "설명 추가… (Add description…)",
+      "chooseWorkspace": "기존 워크스페이스 선택 (Choose an existing workspace)"
+    },
+    "header": {
+      "newIssue": "새 이슈 (New issue)",
+      "newSubIssue": "새 하위 이슈 (New sub-issue)"
+    },
+    "label": {
+      "for": "담당자 (For)",
+      "in": "프로젝트 (in)",
+      "subIssueOf": "하위 이슈 (Sub-issue of)"
+    },
+    "field": {
+      "assignee": "담당자 (Assignee)",
+      "noAssignee": "담당자 없음 (No assignee)",
+      "project": "프로젝트 (Project)",
+      "noProject": "프로젝트 없음 (No project)",
+      "reviewer": "검토자 (Reviewer)",
+      "noReviewer": "검토자 없음 (No reviewer)",
+      "approver": "승인자 (Approver)",
+      "noApprover": "승인자 없음 (No approver)",
+      "priority": "우선순위 (Priority)",
+      "startDate": "시작일 (Start date)",
+      "dueDate": "마감일 (Due date)",
+      "modelLane": "모델 레인 (Model lane)",
+      "model": "모델 (Model)",
+      "defaultModel": "기본 모델 (Default model)",
+      "thinkingEffort": "사고 강도 (Thinking effort)",
+      "enableChrome": "Chrome 활성화 (Enable Chrome)"
+    },
+    "search": {
+      "assignees": "담당자 검색… (Search assignees…)",
+      "projects": "프로젝트 검색… (Search projects…)",
+      "reviewers": "검토자 검색… (Search reviewers…)",
+      "approvers": "승인자 검색… (Search approvers…)",
+      "models": "모델 검색… (Search models…)"
+    },
+    "empty": {
+      "assignees": "담당자가 없습니다. (No assignees found.)",
+      "projects": "프로젝트가 없습니다. (No projects found.)",
+      "reviewers": "검토자가 없습니다. (No reviewers found.)",
+      "approvers": "승인자가 없습니다. (No approvers found.)",
+      "models": "모델이 없습니다. (No models found.)"
+    },
+    "section": {
+      "executionWorkspace": "실행 워크스페이스 (Execution workspace)",
+      "executionWorkspaceHelp": "이 이슈를 공유 워크스페이스, 새 격리 워크스페이스, 또는 기존 워크스페이스에서 실행할지 선택합니다.",
+      "documents": "문서 (Documents)",
+      "attachments": "첨부파일 (Attachments)"
+    },
+    "modelLane": {
+      "primary": "기본 (Primary)",
+      "cheap": "절약 (Cheap)",
+      "custom": "커스텀 (Custom)",
+      "primaryHelp": "에이전트의 기본 모델로 실행합니다.",
+      "customHelp": "이 이슈에만 모델과 사고 강도를 직접 지정합니다."
+    },
+    "action": {
+      "addReviewerOrApprover": "검토자 또는 승인자 추가 (Add reviewer or approver)",
+      "removeDocument": "문서 제거 (Remove document)",
+      "removeAttachment": "첨부파일 제거 (Remove attachment)",
+      "upload": "업로드 (Upload)",
+      "discardDraft": "초안 버리기 (Discard Draft)",
+      "createIssue": "이슈 만들기 (Create Issue)",
+      "createSubIssue": "하위 이슈 만들기 (Create Sub-Issue)",
+      "creating": "생성 중… (Creating…)"
+    },
+    "status": {
+      "creating": "이슈 생성 중… (Creating issue…)",
+      "backlog": "백로그 (Backlog)",
+      "todo": "할 일 (Todo)",
+      "inProgress": "진행 중 (In Progress)"
+    },
+    "warning": {
+      "assignedBacklog": "담당자를 지정하면 실행 가능 상태를 의미합니다 — 상태를",
+      "assignedBacklogSuffix": "으로만 유지하면 의도적으로 보류하는 것입니다. 상태가",
+      "assignedBacklogOr": "또는 (or)",
+      "parentWorkspace": "주의: 이 하위 이슈는 더 이상 상위 이슈 워크스페이스를 사용하지 않습니다 (parent issue workspace)"
+    },
+    "header2": "새 에이전트 추가 (Add a new agent)",
+    "recommendation": {
+      "body": "CEO에게 에이전트 설정을 맡기는 것을 권장합니다 — 조직 구조를 파악하고 보고 체계, 권한, 어댑터를 설정할 수 있습니다. (delegate to CEO)"
+    },
+    "actions": {
+      "askCeo": "CEO에게 새 에이전트 생성 요청 (Ask the CEO to create a new agent)",
+      "advancedConfig": "직접 고급 설정하기 (I want advanced configuration myself)",
+      "back": "뒤로 (Back)"
+    },
+    "advanced": {
+      "prompt": "고급 설정을 위한 어댑터 유형을 선택하세요. (Choose your adapter type for advanced setup.)",
+      "recommended": "추천 (Recommended)"
+    },
+    "ceoIssue": {
+      "title": "새 에이전트 생성",
+      "description": "(원하는 에이전트 종류를 입력하세요)"
+    }
+  },
+  "enum": {
+    "status": {
+      "issue": {
+        "backlog": "백로그 (backlog)",
+        "todo": "할 일 (todo)",
+        "in_progress": "진행 중 (in_progress)",
+        "blocked": "차단됨 (blocked)",
+        "in_review": "검토 중 (in_review)",
+        "done": "완료 (done)",
+        "cancelled": "취소됨 (cancelled)"
+      },
+      "project": {
+        "backlog": "백로그 (backlog)",
+        "planned": "계획됨 (planned)",
+        "in_progress": "진행 중 (in_progress)",
+        "completed": "완료 (completed)",
+        "cancelled": "취소됨 (cancelled)"
+      },
+      "goal": {
+        "planned": "계획됨 (planned)",
+        "active": "활성 (active)",
+        "achieved": "달성 (achieved)",
+        "cancelled": "취소됨 (cancelled)"
+      }
+    },
+    "priority": {
+      "low": "낮음 (low)",
+      "medium": "보통 (medium)",
+      "high": "높음 (high)",
+      "urgent": "긴급 (urgent)",
+      "critical": "긴급 (critical)"
+    },
+    "role": {
+      "ceo": "CEO",
+      "cto": "CTO",
+      "cmo": "CMO",
+      "cfo": "CFO",
+      "security": "보안 (security)",
+      "engineer": "엔지니어 (engineer)",
+      "designer": "디자이너 (designer)",
+      "pm": "PM",
+      "qa": "QA",
+      "devops": "DevOps",
+      "researcher": "리서처 (researcher)",
+      "general": "일반 (general)"
+    }
+  },
+  "goalDetail": {
+    "button": {
+      "showProperties": "속성 보기 (Show properties)",
+      "addSubGoal": "하위 목표 추가 (Sub Goal)"
+    },
+    "breadcrumb": {
+      "goals": "목표 (Goals)",
+      "goal": "목표 (Goal)"
+    },
+    "placeholder": {
+      "description": "설명을 입력하세요..."
+    },
+    "tab": {
+      "subGoals": "하위 목표 (Sub-goals)",
+      "projects": "프로젝트 (Projects)"
+    },
+    "empty": {
+      "subGoals": "하위 목표가 없습니다. (No sub-goals.)",
+      "linkedProjects": "연결된 프로젝트가 없습니다. (No linked projects.)"
+    }
+  },
+  "goals": {
+    "breadcrumb": {
+      "goals": "목표 (Goals)"
+    },
+    "empty": {
+      "selectCompany": "회사를 선택하면 목표를 볼 수 있습니다. (Select a company to view goals.)",
+      "noGoals": "아직 목표가 없습니다. (No goals yet.)"
+    },
+    "button": {
+      "addGoal": "목표 추가 (Add Goal)",
+      "newGoal": "새 목표 (New Goal)"
+    }
+  },
+  "goalTree": {
+    "empty": {
+      "noGoals": "목표가 없습니다. (No goals.)"
+    }
+  },
+  "agents": {
+    "breadcrumb": "에이전트 (Agents)",
+    "filter": {
+      "all": "전체 (All)",
+      "active": "활성 (Active)",
+      "paused": "일시정지 (Paused)",
+      "error": "오류 (Error)"
+    },
+    "filters": {
+      "label": "필터 (Filters)",
+      "showTerminated": "종료된 에이전트 표시 (Show terminated)"
+    },
+    "actions": {
+      "newAgent": "새 에이전트 (New Agent)"
+    },
+    "agentSingular": "에이전트",
+    "agentPlural": "에이전트",
+    "emptyState": {
+      "selectCompany": "에이전트를 보려면 회사를 선택하세요. (Select a company to view agents.)",
+      "noAgents": "첫 번째 에이전트를 만들어 시작하세요. (Create your first agent to get started.)",
+      "noMatch": "선택한 필터와 일치하는 에이전트가 없습니다. (No agents match the selected filter.)",
+      "noHierarchy": "정의된 조직 구조가 없습니다. (No organizational hierarchy defined.)"
+    },
+    "liveRun": {
+      "label": "실행 중 (Live)"
+    }
+  },
+  "agentProperties": {
+    "label": {
+      "status": "상태 (Status)",
+      "role": "역할 (Role)",
+      "title": "직함 (Title)",
+      "adapter": "어댑터 (Adapter)",
+      "session": "세션 (Session)",
+      "lastError": "마지막 오류 (Last error)",
+      "lastHeartbeat": "마지막 하트비트 (Last Heartbeat)",
+      "reportsTo": "보고 대상 (Reports To)",
+      "created": "생성일 (Created)"
+    }
+  },
+  "projectDetail": {
+    "breadcrumb": {
+      "projects": "프로젝트 (Projects)",
+      "project": "프로젝트 (Project)"
+    },
+    "overview": {
+      "descriptionPlaceholder": "설명 추가...",
+      "status": "상태 (Status)",
+      "targetDate": "목표 날짜 (Target Date)"
+    },
+    "colorPicker": {
+      "ariaLabel": "프로젝트 색상 변경",
+      "selectColor": "색상 선택 {{color}}"
+    },
+    "tab": {
+      "issues": "이슈 (Issues)",
+      "overview": "개요 (Overview)",
+      "pluginOperations": "플러그인 작업 (Plugin operations)",
+      "workspaces": "워크스페이스 (Workspaces)",
+      "configuration": "설정 (Configuration)",
+      "budget": "예산 (Budget)"
+    },
+    "badge": {
+      "pausedByBudget": "예산 한도 초과로 일시정지 (Paused by budget hard stop)",
+      "managedBy": "{{pluginName}} 관리 중 (managed by plugin)"
+    },
+    "workspaces": {
+      "loading": "워크스페이스 불러오는 중... (Loading workspaces...)"
+    },
+    "toast": {
+      "archived": "\"{{name}}\" 이(가) 보관되었습니다 (archived)",
+      "unarchived": "\"{{name}}\" 이(가) 복원되었습니다 (unarchived)",
+      "archiveFailed": "프로젝트 보관 실패 (Failed to archive project)",
+      "unarchiveFailed": "프로젝트 복원 실패 (Failed to unarchive project)"
+    }
+  },
+  "projectProperties": {
+    "saveIndicator": {
+      "saving": "저장 중 (Saving)",
+      "saved": "저장됨 (Saved)",
+      "failed": "실패 (Failed)"
+    },
+    "field": {
+      "name": "이름 (Name)",
+      "namePlaceholder": "프로젝트 이름",
+      "description": "설명 (Description)",
+      "descriptionPlaceholder": "설명 추가...",
+      "noDescription": "설명 없음 (No description)",
+      "status": "상태 (Status)",
+      "lead": "담당자 (Lead)",
+      "goals": "목표 (Goals)",
+      "env": "환경변수 (Env)",
+      "envHelp": "이 프로젝트의 모든 이슈 실행에 적용됩니다. 키 충돌 시 프로젝트 값이 에이전트 환경변수를 덮어씁니다.",
+      "created": "생성일 (Created)",
+      "updated": "수정일 (Updated)",
+      "targetDate": "목표 날짜 (Target Date)"
+    },
+    "goals": {
+      "removeGoal": "목표 제거 {{title}}",
+      "addGoal": "목표 (Goal)",
+      "allLinked": "모든 목표가 연결되었습니다. (All goals linked.)"
+    },
+    "codebase": {
+      "title": "코드베이스 (Codebase)",
+      "helpAriaLabel": "코드베이스 도움말",
+      "helpTooltip": "Repo는 소스 기준을 지정합니다. 로컬 폴더는 에이전트가 코드를 작성하는 기본 위치입니다.",
+      "repoLabel": "레포 (Repo)",
+      "changeRepo": "레포 변경 (Change repo)",
+      "clearRepoAriaLabel": "레포 제거",
+      "notSet": "설정되지 않음 (Not set.)",
+      "setRepo": "레포 설정 (Set repo)",
+      "localFolderLabel": "로컬 폴더 (Local folder)",
+      "managedFolder": "Paperclip이 관리하는 폴더입니다.",
+      "changeLocalFolder": "로컬 폴더 변경 (Change local folder)",
+      "setLocalFolder": "로컬 폴더 설정 (Set local folder)",
+      "clearLocalFolderAriaLabel": "로컬 폴더 제거",
+      "legacyWorkspacesNote": "이 프로젝트에 레거시 워크스페이스 기록이 추가로 존재합니다. Paperclip은 기본 워크스페이스를 코드베이스 보기로 사용합니다.",
+      "save": "저장 (Save)",
+      "cancel": "취소 (Cancel)",
+      "errorSaveWorkspace": "워크스페이스 저장 실패 (Failed to save workspace.)",
+      "errorDeleteWorkspace": "워크스페이스 삭제 실패 (Failed to delete workspace.)",
+      "errorUpdateWorkspace": "워크스페이스 업데이트 실패 (Failed to update workspace.)",
+      "confirmClearLocalFolder": "이 워크스페이스의 로컬 폴더를 제거하시겠습니까? (Clear local folder?)",
+      "confirmDeleteLocalFolder": "이 워크스페이스 로컬 폴더를 삭제하시겠습니까? (Delete local folder?)",
+      "confirmClearRepo": "이 워크스페이스의 레포를 제거하시겠습니까? (Clear repo?)",
+      "confirmDeleteRepo": "이 워크스페이스 레포를 삭제하시겠습니까? (Delete repo?)",
+      "errorLocalAbsPath": "로컬 폴더는 절대 경로여야 합니다. (Local folder must be absolute path.)",
+      "errorRepoUrl": "유효한 GitHub 또는 GitHub Enterprise 레포 URL을 입력하세요. (Repo URL invalid.)"
+    },
+    "executionWorkspaces": {
+      "title": "실행 워크스페이스 (Execution Workspaces)",
+      "helpAriaLabel": "실행 워크스페이스 도움말",
+      "helpTooltip": "격리된 이슈 체크아웃 및 실행 워크스페이스 동작에 대한 프로젝트 기본값입니다.",
+      "enableIsolatedCheckouts": "격리된 이슈 체크아웃 활성화 (Enable isolated issue checkouts)",
+      "enableIsolatedCheckoutsHelp": "이슈가 프로젝트의 기본 체크아웃과 격리된 실행 워크스페이스 중 선택할 수 있게 합니다.",
+      "enabled": "활성화됨 (Enabled)",
+      "disabled": "비활성화됨 (Disabled)",
+      "defaultIsolatedCheckout": "새 이슈의 기본값을 격리 체크아웃으로 설정 (New issues default to isolated)",
+      "defaultIsolatedCheckoutHelp": "비활성화하면 새 이슈는 누군가 선택하지 않는 한 프로젝트의 기본 체크아웃을 사용합니다.",
+      "showAdvanced": "고급 체크아웃 설정 표시 (Show advanced)",
+      "hideAdvanced": "고급 체크아웃 설정 숨기기 (Hide advanced)",
+      "hostManagedImpl": "호스트 관리 구현:",
+      "gitWorktree": "Git 워크트리 (Git worktree)",
+      "environment": "환경 (Environment)",
+      "noEnvironment": "환경 없음 (No environment)",
+      "baseRef": "기준 ref (Base ref)",
+      "branchTemplate": "브랜치 템플릿 (Branch template)",
+      "worktreeParentDir": "워크트리 상위 디렉터리 (Worktree parent dir)",
+      "provisionCommand": "프로비전 명령 (Provision command)",
+      "teardownCommand": "정리 명령 (Teardown command)",
+      "provisionTeardownHelp": "프로비전은 에이전트 실행 전 파생된 워크트리 내에서 실행됩니다. 정리 명령은 향후 정리 플로우를 위해 저장됩니다."
+    },
+    "dangerZone": {
+      "title": "위험 구역 (Danger Zone)",
+      "archiveDescription": "이 프로젝트를 보관하면 사이드바 및 프로젝트 선택기에서 숨겨집니다. (Archive)",
+      "unarchiveDescription": "이 프로젝트를 복원하면 사이드바 및 프로젝트 선택기에 다시 표시됩니다. (Unarchive)",
+      "archiving": "보관 중... (Archiving...)",
+      "unarchiving": "복원 중... (Unarchiving...)",
+      "confirmArchive": "\"{{name}}\" 을(를) 보관하시겠습니까? (Archive)",
+      "confirmUnarchive": "\"{{name}}\" 을(를) 복원하시겠습니까? (Unarchive)",
+      "confirm": "확인 (Confirm)",
+      "cancel": "취소 (Cancel)",
+      "archiveProject": "프로젝트 보관 (Archive project)",
+      "unarchiveProject": "프로젝트 복원 (Unarchive project)"
+    },
+    "errors": {
+      "selectCompanyForSecrets": "시크릿을 생성하려면 회사를 선택하세요 (Select a company to create secrets)"
     }
   }
 }

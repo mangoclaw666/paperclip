@@ -103,10 +103,10 @@ export function GoalProperties({ goal, onUpdate }: GoalPropertiesProps) {
               options={GOAL_STATUSES}
               onChange={(status) => onUpdate({ status })}
             >
-              <StatusBadge status={goal.status} />
+              <StatusBadge status={goal.status} ns="goal" />
             </PickerButton>
           ) : (
-            <StatusBadge status={goal.status} />
+            <StatusBadge status={goal.status} ns="goal" />
           )}
         </PropertyRow>
 

@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation, useParams } from "@/lib/router";
 import { Button } from "@/components/ui/button";
-import { useTranslation } from "@/i18n";
+import { useTranslation, i18n } from "@/i18n";
 import { Layout } from "./components/Layout";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import { CloudAccessGate } from "./components/CloudAccessGate";
@@ -267,7 +268,38 @@ function NoCompaniesStartPage() {
   );
 }
 
+// fork_mangoclaw: bridge for the i18n-ko plugin's language toggle.
+// The plugin can't import i18next directly (separate bundle), so it dispatches
+// a CustomEvent that we listen for here and turn into changeLanguage().
+// Storage key + event name MUST match the plugin's constants.
+const I18N_LANG_STORAGE_KEY = "paperclip:i18n:lang";
+const I18N_LANG_EVENT = "paperclip:i18n:setLanguage";
+
+function useI18nLanguageBridge() {
+  useEffect(() => {
+    // 1. On mount, restore language from localStorage (so refresh keeps it).
+    try {
+      const stored = window.localStorage.getItem(I18N_LANG_STORAGE_KEY);
+      if (stored && stored !== i18n.language) {
+        void i18n.changeLanguage(stored);
+      }
+    } catch { /* private mode etc. — fall back to default */ }
+
+    // 2. Listen for the plugin-fired event.
+    const onSetLang = (event: Event) => {
+      const detail = (event as CustomEvent<{ lang?: string }>).detail;
+      const next = detail?.lang;
+      if (typeof next === "string" && next.length > 0) {
+        void i18n.changeLanguage(next);
+      }
+    };
+    window.addEventListener(I18N_LANG_EVENT, onSetLang);
+    return () => window.removeEventListener(I18N_LANG_EVENT, onSetLang);
+  }, []);
+}
+
 export function App() {
+  useI18nLanguageBridge();
   return (
     <>
       <Routes>

@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent, type ReactNode, type Ref } from "react";
+import { useTranslation } from "@/i18n";
 import { pickTextColorForPillBg } from "@/lib/color-contrast";
 import { Link, useLocation, useNavigate, useNavigationType, useParams } from "@/lib/router";
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient, type InfiniteData, type QueryClient } from "@tanstack/react-query";
@@ -534,6 +535,7 @@ function InboxMobileToolbar({
   onProperties,
   onHide,
 }: InboxMobileToolbarProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -552,7 +554,7 @@ function InboxMobileToolbar({
             navigate(backHref);
           }
         }}
-        aria-label="Back to inbox"
+        aria-label={t("issueDetail.action.backToInbox", { defaultValue: "Back to inbox" }) as string}
       >
         <ArrowLeft className="h-5 w-5" />
       </Button>
@@ -564,7 +566,7 @@ function InboxMobileToolbar({
             size="icon-sm"
             onClick={onArchive}
             disabled={archivePending}
-            aria-label="Archive from inbox"
+            aria-label={t("issueDetail.action.archiveFromInbox", { defaultValue: "Archive from inbox" }) as string}
           >
             <Archive className="h-5 w-5" />
           </Button>
@@ -572,7 +574,7 @@ function InboxMobileToolbar({
 
         <Popover open={menuOpen} onOpenChange={setMenuOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label="More actions">
+            <Button variant="ghost" size="icon-sm" aria-label={t("issueDetail.action.moreActions", { defaultValue: "More actions" }) as string}>
               <MoreVertical className="h-5 w-5" />
             </Button>
           </PopoverTrigger>
@@ -582,14 +584,14 @@ function InboxMobileToolbar({
               onClick={() => { onCopy(); setMenuOpen(false); }}
             >
               <Copy className="h-3 w-3" />
-              Copy as markdown
+              {t("issueDetail.action.copyAsMarkdownShort", { defaultValue: "Copy as markdown" })}
             </button>
             <button
               className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50"
               onClick={() => { onProperties(); setMenuOpen(false); }}
             >
               <SlidersHorizontal className="h-3 w-3" />
-              Properties
+              {t("issueDetail.action.properties", { defaultValue: "Properties" })}
             </button>
             {issueIdProp && (
               <button
@@ -597,7 +599,7 @@ function InboxMobileToolbar({
                 onClick={() => { onHide(); setMenuOpen(false); }}
               >
                 <EyeOff className="h-3 w-3" />
-                Hide this issue
+                {t("issueDetail.action.hideIssue", { defaultValue: "Hide this Issue" })}
               </button>
             )}
           </PopoverContent>
@@ -736,6 +738,7 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
   onResumeFromBacklog,
   resumeFromBacklogPending,
 }: IssueDetailChatTabProps) {
+  const { t } = useTranslation();
   const { data: activity } = useQuery({
     queryKey: queryKeys.issues.activity(issueId),
     queryFn: () => activityApi.forIssue(issueId),
@@ -882,7 +885,7 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
             disabled={commentsLoadingOlder}
             onClick={onLoadOlderComments}
           >
-            {commentsLoadingOlder ? "Loading earlier comments..." : "Load earlier comments"}
+            {commentsLoadingOlder ? t("issueDetail.chat.loadingEarlier", { defaultValue: "Loading earlier comments..." }) : t("issueDetail.chat.loadEarlier", { defaultValue: "Load earlier comments" })}
           </Button>
         </div>
       ) : null}
@@ -928,8 +931,8 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
         interruptingQueuedRunId={interruptingQueuedRunId}
         stoppingRunId={pausingWorkRunId}
         onStopRun={onPauseWorkRun}
-        stopRunLabel="Pause work"
-        stoppingRunLabel="Pausing..."
+        stopRunLabel={t("issueDetail.action.pauseWorkShort", { defaultValue: "Pause work" }) as string}
+        stoppingRunLabel={t("issueDetail.action.pausing", { defaultValue: "Pausing..." }) as string}
         stopRunVariant="pause"
         onAcceptInteraction={onAcceptInteraction}
         onRejectInteraction={onRejectInteraction}
@@ -988,6 +991,7 @@ function IssueDetailActivityTab({
   checkingMonitorNow,
   handoffFocusSignal = 0,
 }: IssueDetailActivityTabProps) {
+  const { t } = useTranslation();
   const { data: activity, isLoading: activityLoading } = useQuery({
     queryKey: queryKeys.issues.activity(issueId),
     queryFn: () => activityApi.forIssue(issueId),
@@ -1099,13 +1103,13 @@ function IssueDetailActivityTab({
     <>
       {shouldShowCostSummary && (
         <div className="mb-3 px-3 py-2 rounded-lg border border-border">
-          <div className="text-sm font-medium text-muted-foreground mb-1">Cost Summary</div>
+          <div className="text-sm font-medium text-muted-foreground mb-1">{t("issueDetail.section.costSummary", { defaultValue: "Cost Summary" })}</div>
           {!issueCostSummary.hasCost && !issueCostSummary.hasTokens && !hasIssueTreeCost ? (
-            <div className="text-xs text-muted-foreground">No cost data yet.</div>
+            <div className="text-xs text-muted-foreground">{t("issueDetail.state.noCostData", { defaultValue: "No cost data yet." })}</div>
           ) : (
             <div className="space-y-1 text-xs text-muted-foreground tabular-nums">
               <div className="flex flex-wrap gap-3">
-                <span className="font-medium text-foreground">This issue</span>
+                <span className="font-medium text-foreground">{t("issueDetail.costSummary.thisIssue", { defaultValue: "This issue" })}</span>
                 {issueCostSummary.hasCost ? (
                   <span className="font-medium text-foreground">
                     ${issueCostSummary.cost.toFixed(4)}
@@ -1220,6 +1224,7 @@ function IssueDetailActivityTab({
 }
 
 export function IssueDetail() {
+  const { t } = useTranslation();
   const { issueId } = useParams<{ issueId: string }>();
   const { selectedCompanyId } = useCompany();
   const { openNewIssue } = useDialogActions();
@@ -3201,10 +3206,10 @@ export function IssueDetail() {
         )}
       >
         <Paperclip className="h-3.5 w-3.5 mr-1.5" />
-        {uploadAttachment.isPending || importMarkdownDocument.isPending ? "Uploading..." : (
+        {uploadAttachment.isPending || importMarkdownDocument.isPending ? t("issueDetail.action.uploading", { defaultValue: "Uploading..." }) : (
           <>
-            <span className="hidden sm:inline">Upload attachment</span>
-            <span className="sm:hidden">Upload</span>
+            <span className="hidden sm:inline">{t("issueDetail.action.uploadAttachment", { defaultValue: "Upload attachment" })}</span>
+            <span className="sm:hidden">{t("issueDetail.action.upload", { defaultValue: "Upload" })}</span>
           </>
         )}
       </Button>
@@ -3243,7 +3248,7 @@ export function IssueDetail() {
       {issue.hiddenAt && (
         <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           <EyeOff className="h-4 w-4 shrink-0" />
-          This issue is hidden
+          {t("issueDetail.state.hidden", { defaultValue: "This issue is hidden" })}
         </div>
       )}
       {activePauseHold && (
@@ -3276,7 +3281,7 @@ export function IssueDetail() {
                       setTreeControlOpen(true);
                     }}
                   >
-                    {childIssues.length === 0 ? "Resume work" : "Resume subtree"}
+                    {childIssues.length === 0 ? t("issueDetail.action.resumeWork", { defaultValue: "Resume work" }) : t("issueDetail.action.resumeSubtree", { defaultValue: "Resume subtree" })}
                   </Button>
                   <Button
                     variant="outline"
@@ -3287,7 +3292,7 @@ export function IssueDetail() {
                       setTreeControlOpen(true);
                     }}
                   >
-                    View affected ({childIssues.length === 0 ? 1 : heldDescendantCount})
+                    {t("issueDetail.action.viewAffected", { defaultValue: "View affected" })} ({childIssues.length === 0 ? 1 : heldDescendantCount})
                   </Button>
                   {canShowSubtreeControls ? (
                     <Button
@@ -3300,7 +3305,7 @@ export function IssueDetail() {
                         setTreeControlOpen(true);
                       }}
                     >
-                      Cancel subtree...
+                      {t("issueDetail.action.cancelSubtree", { defaultValue: "Cancel subtree..." })}
                     </Button>
                   ) : null}
                 </div>
@@ -3341,7 +3346,7 @@ export function IssueDetail() {
                 <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400" />
               </span>
-              Live
+              {t("issueDetail.badge.live", { defaultValue: "Live" })}
             </span>
           )}
 
@@ -3351,7 +3356,7 @@ export function IssueDetail() {
               className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 border border-violet-500/30 px-2 py-0.5 text-[10px] font-medium text-violet-600 dark:text-violet-400 shrink-0 hover:bg-violet-500/20 transition-colors"
             >
               <Repeat className="h-3 w-3" />
-              Routine
+              {t("issueDetail.badge.routine", { defaultValue: "Routine" })}
             </Link>
           )}
 
@@ -3362,19 +3367,19 @@ export function IssueDetail() {
           {issue.originKind === "issue_productivity_review" ? (
             <span
               className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300 shrink-0"
-              title="This task is a productivity review."
+              title={t("issueDetail.badge.productivityReviewTitle", { defaultValue: "This task is a productivity review." }) as string}
             >
               <Eye className="h-3 w-3" />
-              Productivity review
+              {t("issueDetail.badge.productivityReview", { defaultValue: "Productivity review" })}
             </span>
           ) : null}
 
           {issue.workMode === "planning" ? (
             <span
               className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300 shrink-0"
-              title="This issue is in planning mode."
+              title={t("issueDetail.badge.planningTitle", { defaultValue: "This issue is in planning mode." }) as string}
             >
-              Planning
+              {t("issueDetail.badge.planning", { defaultValue: "Planning" })}
             </span>
           ) : null}
 
@@ -3382,10 +3387,10 @@ export function IssueDetail() {
             <span
               data-testid="issue-detail-parked-blocker"
               className="inline-flex items-center gap-1 rounded-full border border-amber-500/60 bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300 shrink-0"
-              title="Blocked by parked work — at least one assigned blocker is in backlog and will not wake its assignee."
+              title={t("issueDetail.badge.blockedByParkedWorkTitle", { defaultValue: "Blocked by parked work — at least one assigned blocker is in backlog and will not wake its assignee." }) as string}
             >
               <Flag className="h-3 w-3" />
-              Blocked by parked work
+              {t("issueDetail.badge.blockedByParkedWork", { defaultValue: "Blocked by parked work" })}
             </span>
           ) : null}
 
@@ -3400,7 +3405,7 @@ export function IssueDetail() {
           ) : (
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground opacity-50 px-1 -mx-1 py-0.5">
               <Hexagon className="h-3 w-3 shrink-0" />
-              No project
+              {t("issueDetail.badge.noProject", { defaultValue: "No project" })}
             </span>
           )}
 
@@ -3431,7 +3436,7 @@ export function IssueDetail() {
                 variant="ghost"
                 size="icon-xs"
                 onClick={copyIssueToClipboard}
-                title="Copy issue as markdown"
+                title={t("issueDetail.action.copyAsMarkdown", { defaultValue: "Copy issue as markdown" }) as string}
               >
                 {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
               </Button>
@@ -3439,7 +3444,7 @@ export function IssueDetail() {
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => setMobilePropsOpen(true)}
-                title="Properties"
+                title={t("issueDetail.action.properties", { defaultValue: "Properties" }) as string}
               >
                 <SlidersHorizontal className="h-4 w-4" />
               </Button>
@@ -3455,8 +3460,8 @@ export function IssueDetail() {
                   if (!archivePending && issue?.id) archiveFromInbox.mutate(issue.id);
                 }}
                 disabled={archivePending}
-                title="Archive from inbox"
-                aria-label="Archive from inbox"
+                title={t("issueDetail.action.archiveFromInbox", { defaultValue: "Archive from inbox" }) as string}
+                aria-label={t("issueDetail.action.archiveFromInbox", { defaultValue: "Archive from inbox" }) as string}
               >
                 <Archive className="h-4 w-4" />
               </Button>
@@ -3465,7 +3470,7 @@ export function IssueDetail() {
               variant="ghost"
               size="icon-xs"
               onClick={copyIssueToClipboard}
-              title="Copy issue as markdown"
+              title={t("issueDetail.action.copyAsMarkdown", { defaultValue: "Copy issue as markdown" }) as string}
             >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
@@ -3477,7 +3482,7 @@ export function IssueDetail() {
                 panelVisible ? "opacity-0 pointer-events-none w-0 overflow-hidden" : "opacity-100",
               )}
               onClick={() => setPanelVisible(true)}
-              title="Show properties"
+              title={t("issueDetail.action.showProperties", { defaultValue: "Show properties" }) as string}
             >
               <SlidersHorizontal className="h-4 w-4" />
             </Button>
@@ -3488,8 +3493,8 @@ export function IssueDetail() {
                   variant="ghost"
                   size="icon-xs"
                   className="shrink-0"
-                  aria-label="More issue actions"
-                  title="More issue actions"
+                  aria-label={t("issueDetail.action.moreActions", { defaultValue: "More issue actions" }) as string}
+                  title={t("issueDetail.action.moreActions", { defaultValue: "More issue actions" }) as string}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
@@ -3512,7 +3517,7 @@ export function IssueDetail() {
                   }}
                 >
                   <PauseCircle className="h-3 w-3" />
-                  Pause work...
+                  {t("issueDetail.action.pauseWork", { defaultValue: "Pause work..." })}
                 </button>
               ) : null}
               {canResumeLeafWork ? (
@@ -3526,7 +3531,7 @@ export function IssueDetail() {
                   }}
                 >
                   <PlayCircle className="h-3 w-3" />
-                  Resume work
+                  {t("issueDetail.action.resumeWork", { defaultValue: "Resume work" })}
                 </button>
               ) : null}
               {canShowSubtreeControls ? (
@@ -3541,7 +3546,7 @@ export function IssueDetail() {
                     }}
                   >
                     <PauseCircle className="h-3 w-3" />
-                    Pause subtree...
+                    {t("issueDetail.action.pauseSubtree", { defaultValue: "Pause subtree..." })}
                   </button>
                   {canResumeSubtree ? (
                     <button
@@ -3554,7 +3559,7 @@ export function IssueDetail() {
                       }}
                     >
                       <PlayCircle className="h-3 w-3" />
-                      Resume subtree
+                      {t("issueDetail.action.resumeSubtree", { defaultValue: "Resume subtree" })}
                     </button>
                   ) : null}
                   <button
@@ -3567,7 +3572,7 @@ export function IssueDetail() {
                     }}
                   >
                     <XCircle className="h-3 w-3" />
-                    Cancel subtree...
+                    {t("issueDetail.action.cancelSubtree", { defaultValue: "Cancel subtree..." })}
                   </button>
                   {canRestoreSubtree ? (
                     <button
@@ -3581,7 +3586,7 @@ export function IssueDetail() {
                       }}
                     >
                       <Repeat className="h-3 w-3" />
-                      Restore subtree...
+                      {t("issueDetail.action.restoreSubtree", { defaultValue: "Restore subtree..." })}
                     </button>
                   ) : null}
                 </>
@@ -3597,7 +3602,7 @@ export function IssueDetail() {
                 }}
               >
                 <EyeOff className="h-3 w-3" />
-                Hide this Issue
+                {t("issueDetail.action.hideIssue", { defaultValue: "Hide this Issue" })}
               </button>
             </PopoverContent>
             </Popover>
@@ -3616,7 +3621,7 @@ export function IssueDetail() {
           onSave={(description) => updateIssue.mutateAsync({ description })}
           as="p"
           className="text-[15px] leading-7 text-foreground"
-          placeholder="Add a description..."
+          placeholder={t("issueDetail.placeholder.addDescription", { defaultValue: "Add a description..." }) as string}
           multiline
           foldable
           mentions={mentionOptions}
@@ -3674,7 +3679,7 @@ export function IssueDetail() {
       {showRichSubIssuesSection ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Sub-issues</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">{t("issueDetail.section.subIssues", { defaultValue: "Sub-issues" })}</h3>
           </div>
           <IssuesList
             issues={childIssues}
@@ -3701,7 +3706,7 @@ export function IssueDetail() {
         <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
           <Button variant="outline" size="sm" onClick={openNewSubIssue} className="shrink-0 shadow-none">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            New Sub-issue
+            {t("issueDetail.action.newSubIssue", { defaultValue: "New Sub-issue" })}
           </Button>
         </div>
       )}
@@ -3753,7 +3758,7 @@ export function IssueDetail() {
         onDrop={(evt) => void handleAttachmentDrop(evt)}
       >
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-medium text-muted-foreground">Attachments</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">{t("issueDetail.section.attachments", { defaultValue: "Attachments" })}</h3>
           {attachmentUploadButton}
         </div>
 
@@ -3785,7 +3790,7 @@ export function IssueDetail() {
                     className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/60"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <p className="text-xs text-white font-medium">Delete?</p>
+                    <p className="text-xs text-white font-medium">{t("issueDetail.confirm.delete", { defaultValue: "Delete?" })}</p>
                     <div className="flex gap-1.5">
                       <button
                         type="button"
@@ -3797,7 +3802,7 @@ export function IssueDetail() {
                         }}
                         disabled={deleteAttachment.isPending}
                       >
-                        Yes
+                        {t("issueDetail.confirm.yes", { defaultValue: "Yes" })}
                       </button>
                       <button
                         type="button"
@@ -3807,7 +3812,7 @@ export function IssueDetail() {
                           setConfirmDeleteId(null);
                         }}
                       >
-                        No
+                        {t("issueDetail.confirm.no", { defaultValue: "No" })}
                       </button>
                     </div>
                   </div>
@@ -3819,7 +3824,7 @@ export function IssueDetail() {
                       e.stopPropagation();
                       setConfirmDeleteId(attachment.id);
                     }}
-                    title="Delete attachment"
+                    title={t("issueDetail.action.deleteAttachment", { defaultValue: "Delete attachment" }) as string}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -3848,7 +3853,7 @@ export function IssueDetail() {
                     className="text-muted-foreground hover:text-destructive"
                     onClick={() => deleteAttachment.mutate(attachment.id)}
                     disabled={deleteAttachment.isPending}
-                    title="Delete attachment"
+                    title={t("issueDetail.action.deleteAttachment", { defaultValue: "Delete attachment" }) as string}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -3882,15 +3887,15 @@ export function IssueDetail() {
         <TabsList variant="line" className="w-full justify-start gap-1">
           <TabsTrigger value="chat" className="gap-1.5">
             <MessageSquare className="h-3.5 w-3.5" />
-            Chat
+            {t("issueDetail.tab.chat", { defaultValue: "Chat" })}
           </TabsTrigger>
           <TabsTrigger value="activity" className="gap-1.5">
             <ActivityIcon className="h-3.5 w-3.5" />
-            Activity
+            {t("issueDetail.tab.activity", { defaultValue: "Activity" })}
           </TabsTrigger>
           <TabsTrigger value="related-work" className="gap-1.5">
             <ListTree className="h-3.5 w-3.5" />
-            Related work
+            {t("issueDetail.tab.relatedWork", { defaultValue: "Related work" })}
           </TabsTrigger>
           {issuePluginTabItems.map((item) => (
             <TabsTrigger key={item.value} value={item.value}>
@@ -4036,12 +4041,12 @@ export function IssueDetail() {
 
             <div className="space-y-1.5">
               <label className="text-xs text-muted-foreground">
-                Reason (optional)
+                {t("issueDetail.dialog.reasonLabel", { defaultValue: "Reason (optional)" })}
               </label>
               <Textarea
                 value={treeControlReason}
                 onChange={(event) => setTreeControlReason(event.target.value)}
-                placeholder="Explain why this subtree control is being applied..."
+                placeholder={t("issueDetail.dialog.reasonPlaceholder", { defaultValue: "Explain why this subtree control is being applied..." }) as string}
                 className="min-h-[88px]"
               />
             </div>
@@ -4057,7 +4062,7 @@ export function IssueDetail() {
                     onChange={(event) => setTreeControlWakeAgentsOnResume(event.target.checked)}
                   />
                   <span>
-                    <span className="block font-medium">Wake affected agents ({previewAffectedAgentCount})</span>
+                    <span className="block font-medium">{t("issueDetail.dialog.wakeAgents", { defaultValue: "Wake affected agents" })} ({previewAffectedAgentCount})</span>
                     <span className="text-xs text-muted-foreground">
                       {previewAffectedAgentCount === 0
                         ? "No assigned agents are eligible to wake from this preview."
@@ -4110,7 +4115,7 @@ export function IssueDetail() {
                       void refetchTreeControlPreview();
                     }}
                   >
-                    Retry preview
+                    {t("issueDetail.action.retryPreview", { defaultValue: "Retry preview" })}
                   </Button>
                 </div>
               ) : treeControlPreview ? (
@@ -4157,14 +4162,14 @@ export function IssueDetail() {
           </div>
           <DialogFooter className="border-t border-border/60 bg-background px-6 py-4">
             <Button variant="outline" onClick={() => setTreeControlOpen(false)} disabled={executeTreeControl.isPending}>
-              Close
+              {t("issueDetail.action.close", { defaultValue: "Close" })}
             </Button>
             <Button
               onClick={() => executeTreeControl.mutate()}
               disabled={executeTreeControl.isPending || !canApplyTreeControl}
               variant={treeControlMode === "cancel" ? "destructive" : "default"}
             >
-              {executeTreeControl.isPending ? "Applying..." : treeControlPrimaryButtonLabel}
+              {executeTreeControl.isPending ? t("issueDetail.action.applying", { defaultValue: "Applying..." }) : treeControlPrimaryButtonLabel}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -4174,7 +4179,7 @@ export function IssueDetail() {
       <Sheet open={mobilePropsOpen} onOpenChange={setMobilePropsOpen}>
         <SheetContent side="bottom" className="max-h-[85dvh] pb-[env(safe-area-inset-bottom)]">
           <SheetHeader>
-            <SheetTitle className="text-sm">Properties</SheetTitle>
+            <SheetTitle className="text-sm">{t("issueDetail.section.properties", { defaultValue: "Properties" })}</SheetTitle>
           </SheetHeader>
           <ScrollArea className="flex-1 overflow-y-auto">
             <div className="px-4 pb-4">

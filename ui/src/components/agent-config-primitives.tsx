@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { HelpCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
 import { AGENT_ROLE_LABELS } from "@paperclipai/shared";
+import { t } from "@/i18n";
 
 /* ---- Help text for (?) tooltips ---- */
 export const help: Record<string, string> = {
@@ -69,7 +70,22 @@ import { getAdapterLabels } from "../adapters/adapter-display-registry";
 
 export const adapterLabels = getAdapterLabels();
 
-export const roleLabels = AGENT_ROLE_LABELS as Record<string, string>;
+// Returns translated label for an agent role, falling back to the English constant.
+export function getRoleLabel(role: string): string {
+  const key = `enum.role.${role}`;
+  const fallback = (AGENT_ROLE_LABELS as Record<string, string>)[role] ?? role;
+  return t(key, { defaultValue: fallback });
+}
+
+// Proxy object so call-sites using `roleLabels[role]` continue to work without change.
+export const roleLabels: Record<string, string> = new Proxy({} as Record<string, string>, {
+  get(_target, prop: string) {
+    return getRoleLabel(prop);
+  },
+  has(_target, prop: string) {
+    return prop in (AGENT_ROLE_LABELS as Record<string, string>);
+  },
+});
 
 /* ---- Primitive components ---- */
 

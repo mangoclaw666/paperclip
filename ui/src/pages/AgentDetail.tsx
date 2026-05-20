@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate, Link, Navigate, useBeforeUnload } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   agentsApi,
@@ -633,6 +634,7 @@ export function AgentDetail() {
     runId?: string;
   }>();
   const { companies, selectedCompanyId, setSelectedCompanyId } = useCompany();
+  const { t } = useTranslation();
   const { closePanel } = usePanel();
   const { openNewIssue } = useDialogActions();
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -873,20 +875,20 @@ export function AgentDetail() {
     } else {
       crumbs.push({ label: agentName, href: `/agents/${canonicalAgentRef}/dashboard` });
       if (urlRunId) {
-        crumbs.push({ label: "Runs", href: `/agents/${canonicalAgentRef}/runs` });
-        crumbs.push({ label: `Run ${urlRunId.slice(0, 8)}` });
+        crumbs.push({ label: t("agentDetail.tab.runs", { defaultValue: "Runs" }), href: `/agents/${canonicalAgentRef}/runs` });
+        crumbs.push({ label: `${t("agentDetail.runPrefix", { defaultValue: "Run" })} ${urlRunId.slice(0, 8)}` });
       } else if (activeView === "instructions") {
-        crumbs.push({ label: "Instructions" });
+        crumbs.push({ label: t("agentDetail.tab.instructions", { defaultValue: "Instructions" }) });
       } else if (activeView === "configuration") {
-        crumbs.push({ label: "Configuration" });
+        crumbs.push({ label: t("agentDetail.tab.configuration", { defaultValue: "Configuration" }) });
       // } else if (activeView === "skills") { // TODO: bring back later
       //   crumbs.push({ label: "Skills" });
       } else if (activeView === "runs") {
-        crumbs.push({ label: "Runs" });
+        crumbs.push({ label: t("agentDetail.tab.runs", { defaultValue: "Runs" }) });
       } else if (activeView === "budget") {
-        crumbs.push({ label: "Budget" });
+        crumbs.push({ label: t("agentDetail.tab.budget", { defaultValue: "Budget" }) });
       } else {
-        crumbs.push({ label: "Dashboard" });
+        crumbs.push({ label: t("agentDetail.tab.dashboard", { defaultValue: "Dashboard" }) });
       }
     }
     setBreadcrumbs(crumbs);
@@ -942,12 +944,12 @@ export function AgentDetail() {
             onClick={() => openNewIssue({ assigneeAgentId: agent.id })}
           >
             <Plus className="h-3.5 w-3.5 sm:mr-1" />
-            <span className="hidden sm:inline">Assign Task</span>
+            <span className="hidden sm:inline">{t("agentDetail.action.assignTask", { defaultValue: "Assign Task" })}</span>
           </Button>
           <RunButton
             onClick={() => agentAction.mutate("invoke")}
             disabled={agentAction.isPending || isPendingApproval}
-            label="Run Heartbeat"
+            label={t("agentDetail.action.runHeartbeat", { defaultValue: "Run Heartbeat" }) as string}
           />
           <PauseResumeButton
             isPaused={agent.status === "paused"}
@@ -985,7 +987,7 @@ export function AgentDetail() {
                 }}
               >
                 <Copy className="h-3 w-3" />
-                Copy Agent ID
+                {t("agentDetail.action.copyAgentId", { defaultValue: "Copy Agent ID" })}
               </button>
               <button
                 className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50"
@@ -995,7 +997,7 @@ export function AgentDetail() {
                 }}
               >
                 <RotateCcw className="h-3 w-3" />
-                Reset Sessions
+                {t("agentDetail.action.resetSessions", { defaultValue: "Reset Sessions" })}
               </button>
               <button
                 className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50 text-destructive"
@@ -1005,7 +1007,7 @@ export function AgentDetail() {
                 }}
               >
                 <Trash2 className="h-3 w-3" />
-                Terminate
+                {t("agentDetail.action.terminate", { defaultValue: "Terminate" })}
               </button>
             </PopoverContent>
           </Popover>
@@ -1019,12 +1021,12 @@ export function AgentDetail() {
         >
           <PageTabBar
             items={[
-              { value: "dashboard", label: "Dashboard" },
-              { value: "instructions", label: "Instructions" },
-              { value: "skills", label: "Skills" },
-              { value: "configuration", label: "Configuration" },
-              { value: "runs", label: "Runs" },
-              { value: "budget", label: "Budget" },
+              { value: "dashboard", label: t("agentDetail.tab.dashboard", { defaultValue: "Dashboard" }) as string },
+              { value: "instructions", label: t("agentDetail.tab.instructions", { defaultValue: "Instructions" }) as string },
+              { value: "skills", label: t("agentDetail.tab.skills", { defaultValue: "Skills" }) as string },
+              { value: "configuration", label: t("agentDetail.tab.configuration", { defaultValue: "Configuration" }) as string },
+              { value: "runs", label: t("agentDetail.tab.runs", { defaultValue: "Runs" }) as string },
+              { value: "budget", label: t("agentDetail.tab.budget", { defaultValue: "Budget" }) as string },
             ]}
             value={activeView}
             onValueChange={(value) => navigate(`/agents/${canonicalAgentRef}/${value}`)}

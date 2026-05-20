@@ -4,12 +4,13 @@ import { cn } from "../lib/utils";
 import { priorityColor, priorityColorDefault } from "../lib/status-colors";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/i18n";
 
-const priorityConfig: Record<string, { icon: typeof ArrowUp; color: string; label: string }> = {
-  critical: { icon: AlertTriangle, color: priorityColor.critical ?? priorityColorDefault, label: "Critical" },
-  high: { icon: ArrowUp, color: priorityColor.high ?? priorityColorDefault, label: "High" },
-  medium: { icon: Minus, color: priorityColor.medium ?? priorityColorDefault, label: "Medium" },
-  low: { icon: ArrowDown, color: priorityColor.low ?? priorityColorDefault, label: "Low" },
+const priorityConfig: Record<string, { icon: typeof ArrowUp; color: string; labelKey: string; fallback: string }> = {
+  critical: { icon: AlertTriangle, color: priorityColor.critical ?? priorityColorDefault, labelKey: "enum.priority.critical", fallback: "Critical" },
+  high: { icon: ArrowUp, color: priorityColor.high ?? priorityColorDefault, labelKey: "enum.priority.high", fallback: "High" },
+  medium: { icon: Minus, color: priorityColor.medium ?? priorityColorDefault, labelKey: "enum.priority.medium", fallback: "Medium" },
+  low: { icon: ArrowDown, color: priorityColor.low ?? priorityColorDefault, labelKey: "enum.priority.low", fallback: "Low" },
 };
 
 const allPriorities = ["critical", "high", "medium", "low"];
@@ -23,8 +24,10 @@ interface PriorityIconProps {
 
 export function PriorityIcon({ priority, onChange, className, showLabel }: PriorityIconProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   const config = priorityConfig[priority] ?? priorityConfig.medium!;
   const Icon = config.icon;
+  const label = t(config.labelKey, { defaultValue: config.fallback });
 
   const icon = (
     <span
@@ -39,12 +42,12 @@ export function PriorityIcon({ priority, onChange, className, showLabel }: Prior
     </span>
   );
 
-  if (!onChange) return showLabel ? <span className="inline-flex items-center gap-1.5">{icon}<span className="text-sm">{config.label}</span></span> : icon;
+  if (!onChange) return showLabel ? <span className="inline-flex items-center gap-1.5">{icon}<span className="text-sm">{label}</span></span> : icon;
 
   const trigger = showLabel ? (
     <button className="inline-flex items-center gap-1.5 cursor-pointer hover:bg-accent/50 rounded px-1 -mx-1 py-0.5 transition-colors">
       {icon}
-      <span className="text-sm">{config.label}</span>
+      <span className="text-sm">{label}</span>
     </button>
   ) : icon;
 
@@ -55,6 +58,7 @@ export function PriorityIcon({ priority, onChange, className, showLabel }: Prior
         {allPriorities.map((p) => {
           const c = priorityConfig[p]!;
           const PIcon = c.icon;
+          const pLabel = t(c.labelKey, { defaultValue: c.fallback });
           return (
             <Button
               key={p}
@@ -67,7 +71,7 @@ export function PriorityIcon({ priority, onChange, className, showLabel }: Prior
               }}
             >
               <PIcon className={cn("h-3.5 w-3.5", c.color)} />
-              {c.label}
+              {pLabel}
             </Button>
           );
         })}

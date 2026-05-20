@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "@/i18n";
 import { useParams } from "@/lib/router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { goalsApi } from "../api/goals";
@@ -30,6 +31,7 @@ export function GoalPropertiesToggleButton({
   panelVisible,
   onShowProperties,
 }: GoalPropertiesToggleButtonProps) {
+  const { t } = useTranslation();
   return (
     <Button
       variant="ghost"
@@ -39,7 +41,7 @@ export function GoalPropertiesToggleButton({
         panelVisible ? "opacity-0 pointer-events-none w-0 overflow-hidden" : "opacity-100",
       )}
       onClick={onShowProperties}
-      title="Show properties"
+      title={t("goalDetail.button.showProperties", { defaultValue: "Show properties" })}
     >
       <SlidersHorizontal className="h-4 w-4" />
     </Button>
@@ -47,6 +49,7 @@ export function GoalPropertiesToggleButton({
 }
 
 export function GoalDetail() {
+  const { t } = useTranslation();
   const { goalId } = useParams<{ goalId: string }>();
   const { selectedCompanyId, setSelectedCompanyId } = useCompany();
   const { openNewGoal } = useDialogActions();
@@ -118,10 +121,10 @@ export function GoalDetail() {
 
   useEffect(() => {
     setBreadcrumbs([
-      { label: "Goals", href: "/goals" },
-      { label: goal?.title ?? goalId ?? "Goal" }
+      { label: t("goalDetail.breadcrumb.goals", { defaultValue: "Goals" }), href: "/goals" },
+      { label: goal?.title ?? goalId ?? t("goalDetail.breadcrumb.goal", { defaultValue: "Goal" }) }
     ]);
-  }, [setBreadcrumbs, goal, goalId]);
+  }, [setBreadcrumbs, goal, goalId, t]);
 
   useEffect(() => {
     if (goal) {
@@ -146,7 +149,7 @@ export function GoalDetail() {
           <span className="text-xs uppercase text-muted-foreground">
             {goal.level}
           </span>
-          <StatusBadge status={goal.status} />
+          <StatusBadge status={goal.status} ns="goal" />
           <div className="ml-auto">
             <GoalPropertiesToggleButton
               panelVisible={panelVisible}
@@ -167,7 +170,7 @@ export function GoalDetail() {
           onSave={(description) => updateGoal.mutate({ description })}
           as="p"
           className="text-sm text-muted-foreground"
-          placeholder="Add a description..."
+          placeholder={t("goalDetail.placeholder.description", { defaultValue: "Add a description..." })}
           multiline
           imageUploadHandler={async (file) => {
             const asset = await uploadImage.mutateAsync(file);
@@ -179,10 +182,10 @@ export function GoalDetail() {
       <Tabs defaultValue="children">
         <TabsList>
           <TabsTrigger value="children">
-            Sub-Goals ({childGoals.length})
+            {t("goalDetail.tab.subGoals", { defaultValue: "하위 목표 (Sub-goals)" })} ({childGoals.length})
           </TabsTrigger>
           <TabsTrigger value="projects">
-            Projects ({linkedProjects.length})
+            {t("goalDetail.tab.projects", { defaultValue: "프로젝트 (Projects)" })} ({linkedProjects.length})
           </TabsTrigger>
         </TabsList>
 
@@ -194,11 +197,11 @@ export function GoalDetail() {
               onClick={() => openNewGoal({ parentId: goalId })}
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Sub Goal
+              {t("goalDetail.button.addSubGoal", { defaultValue: "하위 목표 추가 (Sub Goal)" })}
             </Button>
           </div>
           {childGoals.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No sub-goals.</p>
+            <p className="text-sm text-muted-foreground">{t("goalDetail.empty.subGoals", { defaultValue: "하위 목표가 없습니다. (No sub-goals.)" })}</p>
           ) : (
             <GoalTree goals={childGoals} goalLink={(g) => `/goals/${g.id}`} />
           )}
@@ -206,7 +209,7 @@ export function GoalDetail() {
 
         <TabsContent value="projects" className="mt-4">
           {linkedProjects.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No linked projects.</p>
+            <p className="text-sm text-muted-foreground">{t("goalDetail.empty.linkedProjects", { defaultValue: "연결된 프로젝트가 없습니다. (No linked projects.)" })}</p>
           ) : (
             <div className="border border-border">
               {linkedProjects.map((project) => (
@@ -215,7 +218,7 @@ export function GoalDetail() {
                   title={project.name}
                   subtitle={project.description ?? undefined}
                   to={projectUrl(project)}
-                  trailing={<StatusBadge status={project.status} />}
+                  trailing={<StatusBadge status={project.status} ns="project" />}
                 />
               ))}
             </div>

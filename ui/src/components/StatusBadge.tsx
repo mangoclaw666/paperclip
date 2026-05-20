@@ -1,7 +1,13 @@
+import { useTranslation } from "@/i18n";
 import { cn } from "../lib/utils";
 import { statusBadge, statusBadgeDefault } from "../lib/status-colors";
 
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status, ns }: { status: string; ns?: "issue" | "project" | "goal" }) {
+  const { t } = useTranslation();
+  const key = ns ? `enum.status.${ns}.${status}` : `enum.status.issue.${status}`;
+  const fallback = status.replace(/_/g, " ");
+  const label = t(key, { defaultValue: fallback });
+
   return (
     <span
       className={cn(
@@ -9,7 +15,7 @@ export function StatusBadge({ status }: { status: string }) {
         statusBadge[status] ?? statusBadgeDefault
       )}
     >
-      {status.replace(/_/g, " ")}
+      {label}
     </span>
   );
 }

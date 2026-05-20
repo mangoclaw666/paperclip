@@ -9,6 +9,7 @@ import {
   Plus,
   Users,
 } from "lucide-react";
+import { useTranslation } from "@/i18n";
 import { useCompany } from "../context/CompanyContext";
 import { useDialogActions } from "../context/DialogContext";
 import { useSidebar } from "../context/SidebarContext";
@@ -201,6 +202,7 @@ export function SidebarAgents() {
   const { isMobile, setSidebarOpen } = useSidebar();
   const { pushToast } = useToastActions();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
@@ -345,17 +347,17 @@ export function SidebarAgents() {
 
   return (
     <SidebarSection
-      label="Agents"
+      label={t("nav.section.agents", { defaultValue: "Agents" })}
       collapsible={{ open, onOpenChange: setOpen }}
       headerAction={{
-        ariaLabel: "New agent",
+        ariaLabel: t("nav.newAgent", { defaultValue: "New agent" }) as string,
         icon: Plus,
         onClick: openNewAgent,
       }}
       menu={{
         ariaLabel: "Agents section actions",
         actions: [
-          { type: "item", label: "Browse agents", icon: Users, href: "/agents/all" },
+          { type: "item", label: t("nav.browseAgents", { defaultValue: "Browse agents" }) as string, icon: Users, href: "/agents/all" },
           { type: "separator" },
         ],
         radioLabel: "Agent sort",

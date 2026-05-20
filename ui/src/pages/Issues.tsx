@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "@/lib/router";
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "@/i18n";
 import { issuesApi } from "../api/issues";
 import { agentsApi } from "../api/agents";
 import { projectsApi } from "../api/projects";
@@ -56,6 +57,7 @@ export function buildIssuesSearchUrl(currentHref: string, search: string): strin
 }
 
 export function Issues() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const location = useLocation();
@@ -108,16 +110,16 @@ export function Issues() {
   const issueLinkState = useMemo(
     () =>
       createIssueDetailLocationState(
-        "Issues",
+        t("issues.breadcrumb.issues", { defaultValue: "Issues" }),
         `${location.pathname}${location.search}${location.hash}`,
         "issues",
       ),
-    [location.pathname, location.search, location.hash],
+    [location.pathname, location.search, location.hash, t],
   );
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Issues" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("issues.breadcrumb.issues", { defaultValue: "Issues" }) }]);
+  }, [setBreadcrumbs, t]);
 
   const issuePageSize = workspaceIdFilter ? WORKSPACE_FILTER_ISSUE_LIMIT : ISSUES_PAGE_SIZE;
 
@@ -173,7 +175,7 @@ export function Issues() {
   });
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={CircleDot} message="Select a company to view issues." />;
+    return <EmptyState icon={CircleDot} message={t("issues.emptyState.selectCompany", { defaultValue: "Select a company to view issues." }) as string} />;
   }
 
   return (
