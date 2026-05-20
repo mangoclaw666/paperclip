@@ -109,7 +109,13 @@ function ProjectItem({
           className="shrink-0 h-3.5 w-3.5 rounded-sm"
           style={{ backgroundColor: project.color ?? "#6366f1" }}
         />
-        <span className="flex-1 truncate">{project.name}</span>
+        {/* fork_mangoclaw: prefix identifier (e.g. "MK-01") in sidebar list. */}
+        <span className="flex-1 truncate">
+          {project.identifier && (
+            <span className="font-mono text-xs text-muted-foreground mr-1.5">{project.identifier}</span>
+          )}
+          {project.name}
+        </span>
         {project.pauseReason === "budget" ? <BudgetSidebarMarker title="Project paused by budget" /> : null}
       </NavLink>
       {projectSidebarSlots.length > 0 && (

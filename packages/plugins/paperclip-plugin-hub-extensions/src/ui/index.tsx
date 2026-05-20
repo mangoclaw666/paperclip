@@ -254,6 +254,11 @@ function Section({ label, hint, children }: { label: string; hint: string; child
   );
 }
 
+// fork_mangoclaw: Agent Roles reference page was moved to
+// `mangoclaw666.paperclip-plugin-catalog` — different concern (read-only docs)
+// from this plugin's bridging/injection functions.
+
+
 // ─── Sidebar links — appear in the company sidebar under PaperClip's nav ─
 
 function SidebarLink({ label, route, icon }: { label: string; route: string; icon: string }) {

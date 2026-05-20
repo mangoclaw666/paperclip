@@ -87,6 +87,10 @@ export interface Project {
   primaryWorkspace: ProjectWorkspace | null;
   managedByPlugin?: ProjectManagedByPlugin | null;
   archivedAt: Date | null;
+  // fork_mangoclaw: auto-numbered identifier + manual sort_order (migration 0089).
+  projectNumber?: number | null;
+  identifier?: string | null;
+  sortOrder?: number;
   createdAt: Date;
   updatedAt: Date;
 }

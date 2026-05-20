@@ -70,6 +70,50 @@ function parseFrontmatter(text: string): { meta: Record<string, unknown>; body: 
   return { meta, body: m[2].trim() };
 }
 
+/**
+ * fork_mangoclaw: write a single scalar field into a markdown file's YAML
+ * frontmatter, preserving everything else. Used after each `sync` upsert to
+ * stamp the server-assigned `identifier:` (e.g. `MK-01`, `001`, `MAK-005`)
+ * back onto the local file so the folder is self-describing and `grep` finds
+ * the human ID without round-tripping through the API.
+ *
+ * Idempotent: returns false (no write) when the field already equals the new
+ * value. Returns false if the file has no `---` frontmatter block — we don't
+ * try to invent one because it might break other tools' expectations.
+ */
+async function setFrontmatterField(
+  filePath: string,
+  key: string,
+  value: string | number | null | undefined,
+): Promise<boolean> {
+  let text: string;
+  try { text = await readFile(filePath, "utf-8"); } catch { return false; }
+  const normalized = text.replace(/\r\n/g, "\n");
+  const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!fmMatch) return false;
+  const lines = fmMatch[1].split("\n");
+  const body = fmMatch[2];
+  const valueStr = value === null || value === undefined ? "" : String(value);
+  const keyRe = new RegExp(`^${key}\\s*:`);
+  const foundIdx = lines.findIndex((line) => keyRe.test(line));
+  if (foundIdx >= 0) {
+    const existing = lines[foundIdx].replace(keyRe, "").trim().replace(/^["']|["']$/g, "");
+    if (existing === valueStr) return false;
+    if (valueStr === "") {
+      lines.splice(foundIdx, 1);
+    } else {
+      lines[foundIdx] = `${key}: ${valueStr}`;
+    }
+  } else if (valueStr !== "") {
+    lines.push(`${key}: ${valueStr}`);
+  } else {
+    return false;
+  }
+  const newText = `---\n${lines.join("\n")}\n---\n\n${body}`;
+  await writeFile(filePath, newText, "utf-8");
+  return true;
+}
+
 function readTopLevelYamlScalar(text: string, key: string): string | null {
   const re = new RegExp(`^${key}\\s*:\\s*(.+?)\\s*$`, "m");
   const m = text.match(re);
@@ -316,6 +360,8 @@ interface DbEntity {
   title?: string;
   name?: string;
   description?: string | null;
+  // fork_mangoclaw: server-assigned human ID (e.g. MK-01, 001, MAK-005).
+  identifier?: string | null;
 }
 
 /**
@@ -600,7 +646,7 @@ export function registerProjectCommands(program: Command): void {
         const dbGoals = await ctx.api.get<DbEntity[]>(`/api/companies/${companyId}/goals`) ?? [];
         const levelOrder: Record<string, number> = { company: 0, team: 1, agent: 2, task: 3 };
         const sorted = [...goalSpecs].sort((a, b) => (levelOrder[a.level] ?? 99) - (levelOrder[b.level] ?? 99));
-        let created = 0, updated = 0, failed = 0;
+        let created = 0, updated = 0, failed = 0, stamped = 0;
         for (const g of sorted) {
           const parentId = g.parentGoalSlug ? goalSlugToId.get(g.parentGoalSlug) ?? null : null;
           if (g.parentGoalSlug && !parentId) {
@@ -610,13 +656,24 @@ export function registerProjectCommands(program: Command): void {
           const body = { title: g.title, level: g.level, status: g.status, parentId, description: buildDescriptionWithMarker(g.slug, "goal", g.bodyText) };
           try {
             const existing = findBySlugOrTitle(dbGoals, g.slug, g.title);
+            let identifier: string | null | undefined = null;
             if (existing) {
-              await ctx.api.patch(`/api/goals/${existing.id}`, body);
+              const patched = await ctx.api.patch<DbEntity>(`/api/goals/${existing.id}`, body);
               goalSlugToId.set(g.slug, existing.id);
+              identifier = patched?.identifier ?? existing.identifier;
               updated++;
             } else {
               const created2 = await ctx.api.post<DbEntity>(`/api/companies/${companyId}/goals`, body);
-              if (created2?.id) { goalSlugToId.set(g.slug, created2.id); created++; }
+              if (created2?.id) {
+                goalSlugToId.set(g.slug, created2.id);
+                identifier = created2.identifier;
+                created++;
+              }
+            }
+            // fork_mangoclaw: stamp server-assigned identifier into local GOAL.md frontmatter.
+            if (identifier) {
+              const goalFile = path.join(paperclipDir, "goals", g.slug, "GOAL.md");
+              if (await setFrontmatterField(goalFile, "identifier", identifier)) stamped++;
             }
           } catch (err) {
             const msg = err instanceof ApiRequestError ? `${(err as ApiRequestError).status} ${(err as ApiRequestError).message}` : String(err);
@@ -624,7 +681,7 @@ export function registerProjectCommands(program: Command): void {
             failed++;
           }
         }
-        console.log(`  goals: created=${created} updated=${updated} failed=${failed}`);
+        console.log(`  goals: created=${created} updated=${updated} failed=${failed} identifier-stamped=${stamped}`);
       }
 
       // ── Projects
@@ -632,20 +689,31 @@ export function registerProjectCommands(program: Command): void {
       if (projectSpecs.length > 0) {
         console.log(pc.cyan(`[sync] projects upsert (${projectSpecs.length})`));
         const dbProjects = await ctx.api.get<DbEntity[]>(`/api/companies/${companyId}/projects`) ?? [];
-        let created = 0, updated = 0, failed = 0;
+        let created = 0, updated = 0, failed = 0, stamped = 0;
         for (const p of projectSpecs) {
           const goalId = p.goalSlug ? goalSlugToId.get(p.goalSlug) ?? null : null;
           const body: Record<string, unknown> = { name: p.name, status: p.status, description: buildDescriptionWithMarker(p.slug, "project", p.bodyText) };
           if (goalId) body.goalId = goalId;
           try {
             const existing = findBySlugOrTitle(dbProjects, p.slug, p.name);
+            let identifier: string | null | undefined = null;
             if (existing) {
-              await ctx.api.patch(`/api/projects/${existing.id}`, body);
+              const patched = await ctx.api.patch<DbEntity>(`/api/projects/${existing.id}`, body);
               projectSlugToId.set(p.slug, existing.id);
+              identifier = patched?.identifier ?? existing.identifier;
               updated++;
             } else {
               const created2 = await ctx.api.post<DbEntity>(`/api/companies/${companyId}/projects`, body);
-              if (created2?.id) { projectSlugToId.set(p.slug, created2.id); created++; }
+              if (created2?.id) {
+                projectSlugToId.set(p.slug, created2.id);
+                identifier = created2.identifier;
+                created++;
+              }
+            }
+            // fork_mangoclaw: stamp identifier into local PROJECT.md frontmatter.
+            if (identifier) {
+              const projectFile = path.join(paperclipDir, "projects", p.slug, "PROJECT.md");
+              if (await setFrontmatterField(projectFile, "identifier", identifier)) stamped++;
             }
           } catch (err) {
             const msg = err instanceof ApiRequestError ? `${(err as ApiRequestError).status} ${(err as ApiRequestError).message}` : String(err);
@@ -653,7 +721,7 @@ export function registerProjectCommands(program: Command): void {
             failed++;
           }
         }
-        console.log(`  projects: created=${created} updated=${updated} failed=${failed}`);
+        console.log(`  projects: created=${created} updated=${updated} failed=${failed} identifier-stamped=${stamped}`);
       }
 
       // ── Agents: PATCH cwd + managed instructions (slug-based, already idempotent).
@@ -698,7 +766,7 @@ export function registerProjectCommands(program: Command): void {
       if (taskSpecs.length > 0) {
         console.log(pc.cyan(`[sync] issues upsert (${taskSpecs.length})`));
         const dbIssues = await ctx.api.get<DbEntity[]>(`/api/companies/${companyId}/issues?status=todo,in_progress,blocked,in_review,done,cancelled,backlog`) ?? [];
-        let created = 0, updated = 0, failed = 0;
+        let created = 0, updated = 0, failed = 0, stamped = 0;
         for (const t of taskSpecs) {
           const projectId = t.projectSlug ? projectSlugToId.get(t.projectSlug) ?? null : null;
           const goalId = t.goalSlug ? goalSlugToId.get(t.goalSlug) ?? null : null;
@@ -714,12 +782,20 @@ export function registerProjectCommands(program: Command): void {
           if (assigneeAgentId) body.assigneeAgentId = assigneeAgentId;
           try {
             const existing = findBySlugOrTitle(dbIssues, t.slug, t.title);
+            let identifier: string | null | undefined = null;
             if (existing) {
-              await ctx.api.patch(`/api/issues/${existing.id}`, body);
+              const patched = await ctx.api.patch<DbEntity>(`/api/issues/${existing.id}`, body);
+              identifier = patched?.identifier ?? existing.identifier;
               updated++;
             } else {
-              await ctx.api.post(`/api/companies/${companyId}/issues`, body);
+              const created2 = await ctx.api.post<DbEntity>(`/api/companies/${companyId}/issues`, body);
+              identifier = created2?.identifier;
               created++;
+            }
+            // fork_mangoclaw: stamp issue identifier (MAK-NNN) into local TASK.md frontmatter.
+            if (identifier) {
+              const taskFile = path.join(paperclipDir, "tasks", t.slug, "TASK.md");
+              if (await setFrontmatterField(taskFile, "identifier", identifier)) stamped++;
             }
           } catch (err) {
             const msg = err instanceof ApiRequestError ? `${(err as ApiRequestError).status} ${(err as ApiRequestError).message}` : String(err);
@@ -727,7 +803,7 @@ export function registerProjectCommands(program: Command): void {
             failed++;
           }
         }
-        console.log(`  issues: created=${created} updated=${updated} failed=${failed}`);
+        console.log(`  issues: created=${created} updated=${updated} failed=${failed} identifier-stamped=${stamped}`);
       }
 
       // ── externalSource PATCH (idempotent — same payload every time).

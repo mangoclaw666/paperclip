@@ -65,7 +65,9 @@ export function Projects() {
           {projects.map((project) => (
             <EntityRow
               key={project.id}
-              title={project.name}
+              // fork_mangoclaw: prefix the human identifier (e.g. "MK-01") so
+              // users can refer to projects by stable ID like they do with issues.
+              title={project.identifier ? `${project.identifier} · ${project.name}` : project.name}
               subtitle={project.description ?? undefined}
               to={projectUrl(project)}
               trailing={
