@@ -1,5 +1,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// fork_mangoclaw: eco-mode master toggle imports
+import { agentsApi } from "../api/agents";
 import {
   DEFAULT_COMPANY_ATTACHMENT_MAX_BYTES,
   MAX_COMPANY_ATTACHMENT_MAX_BYTES,
@@ -93,6 +95,45 @@ export function CompanySettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.companies.all });
     }
+  });
+
+  // fork_mangoclaw: eco-mode master toggle — bulk PATCH ecoMode for all non-ceo agents.
+  const agentsQuery = useQuery({
+    queryKey: queryKeys.agents.list(selectedCompanyId ?? "__no-company__"),
+    queryFn: () => agentsApi.list(selectedCompanyId!),
+    enabled: !!selectedCompanyId,
+  });
+  const nonCeoAgents = (agentsQuery.data ?? []).filter(
+    (a) => a.role !== "ceo" && a.status !== "terminated"
+  );
+  const ecoModeStates = nonCeoAgents.map((a) => {
+    const rc = (a.runtimeConfig ?? {}) as Record<string, unknown>;
+    const hb = (rc.heartbeat ?? {}) as Record<string, unknown>;
+    return hb.ecoMode === true;
+  });
+  const ecoAllOn = ecoModeStates.length > 0 && ecoModeStates.every(Boolean);
+  const ecoAllOff = ecoModeStates.length > 0 && ecoModeStates.every((v) => !v);
+  const ecoMixed = !ecoAllOn && !ecoAllOff && ecoModeStates.length > 0;
+
+  const ecoMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      await Promise.all(
+        nonCeoAgents.map((a) => {
+          const rc = (a.runtimeConfig ?? {}) as Record<string, unknown>;
+          const hb = (rc.heartbeat ?? {}) as Record<string, unknown>;
+          const nextRuntimeConfig = {
+            ...rc,
+            heartbeat: { ...hb, ecoMode: enabled },
+          };
+          return agentsApi.update(a.id, { runtimeConfig: nextRuntimeConfig }, selectedCompanyId ?? undefined);
+        })
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.agents.list(selectedCompanyId!),
+      });
+    },
   });
 
   const inviteMutation = useMutation({
@@ -505,6 +546,82 @@ export function CompanySettings() {
                   </Button>
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* fork_mangoclaw: Eco Mode master toggle — bulk on/off for non-Director agents */}
+      <div className="space-y-4">
+        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Eco Mode
+        </div>
+        <div className="rounded-md border border-border px-4 py-4 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                Skip wake when nothing changed
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Master switch for all non-Director agents. When ON, idle agents skip the LLM call on timer wake if no relevant change happened since the last cycle. Saves cost for idle agents. Director is always excluded so autonomous cascade keeps running.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {ecoMutation.isPending ? (
+                <span className="text-xs text-muted-foreground">Updating…</span>
+              ) : ecoMixed ? (
+                <span className="text-xs text-amber-600">Mixed</span>
+              ) : null}
+              <Button
+                size="sm"
+                variant={ecoAllOn ? "default" : "outline"}
+                disabled={ecoMutation.isPending || nonCeoAgents.length === 0}
+                onClick={() => ecoMutation.mutate(true)}
+              >
+                {ecoAllOn ? <Check className="mr-1 h-3 w-3" /> : null}
+                Turn ON all
+              </Button>
+              <Button
+                size="sm"
+                variant={ecoAllOff ? "default" : "outline"}
+                disabled={ecoMutation.isPending || nonCeoAgents.length === 0}
+                onClick={() => ecoMutation.mutate(false)}
+              >
+                {ecoAllOff ? <Check className="mr-1 h-3 w-3" /> : null}
+                Turn OFF all
+              </Button>
+            </div>
+          </div>
+          {nonCeoAgents.length > 0 ? (
+            <div className="text-xs text-muted-foreground border-t border-border pt-3">
+              <div className="font-medium mb-1.5">Affected agents ({nonCeoAgents.length}):</div>
+              <div className="grid grid-cols-2 gap-y-1 gap-x-4">
+                {nonCeoAgents.map((a, i) => (
+                  <div key={a.id} className="flex items-center gap-2">
+                    <span
+                      className={
+                        ecoModeStates[i]
+                          ? "inline-block h-1.5 w-1.5 rounded-full bg-green-500"
+                          : "inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/40"
+                      }
+                    />
+                    <span>{a.name}</span>
+                    <span className="text-muted-foreground/60">
+                      ({ecoModeStates[i] ? "eco ON" : "eco OFF"})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : agentsQuery.isLoading ? (
+            <div className="text-xs text-muted-foreground">Loading agents…</div>
+          ) : (
+            <div className="text-xs text-muted-foreground">No non-Director agents to toggle.</div>
+          )}
+          {ecoMutation.isError && (
+            <div className="text-xs text-destructive">
+              Failed to update eco mode:{" "}
+              {ecoMutation.error instanceof Error ? ecoMutation.error.message : "unknown error"}
             </div>
           )}
         </div>
