@@ -343,7 +343,11 @@ export function companyService(db: Db) {
           heartbeatRunWatchdogDecisions, heartbeatRunEvents,
           // Agent children (FK → agents)
           agentApiKeys, agentConfigRevisions, agentRuntimeState,
-          agentTaskSessions, agentWakeupRequests,
+          agentTaskSessions,
+          // agentWakeupRequests is deferred to AFTER heartbeatRuns — see note
+          // at the heartbeatRuns line. heartbeat_runs.wakeup_request_id has no
+          // ON DELETE action, so deleting wakeup_requests first violates the
+          // FK on any company that has accumulated heartbeat runs.
           // Approval children (FK → approvals)
           approvalComments,
           // Document children
@@ -364,6 +368,8 @@ export function companyService(db: Db) {
           routineRuns, routineTriggers, routineRevisions, routines,
           // Primary entities (referenced by children above)
           heartbeatRuns,
+          // agentWakeupRequests must come AFTER heartbeatRuns (heartbeat_runs.wakeup_request_id FK).
+          agentWakeupRequests,
           documents,
           issues,
           goals,
@@ -388,6 +394,31 @@ export function companyService(db: Db) {
           labels,
           inboxDismissals,
         ];
+
+        // fork_mangoclaw: clear FK references to heartbeat_runs that schema-level
+        // ON DELETE doesn't handle. Three columns have no onDelete action defined
+        // (NO ACTION = block), so DELETE FROM heartbeat_runs would fail on any
+        // company that ever logged activity, cost events, or finance events:
+        //
+        //   - activity_log.run_id
+        //   - cost_events.heartbeat_run_id
+        //   - finance_events.heartbeat_run_id
+        //
+        // Other heartbeat_runs FKs (issues, environment_leases, secret_access_events,
+        // workspace_operations, retry_of_run_id, etc.) already declare
+        // `onDelete: "set null"` or `"cascade"` in schema, so Postgres handles
+        // those automatically — we deliberately don't touch them here.
+        //
+        // ⚠️  If you add a new column referencing heartbeat_runs without
+        // declaring onDelete in schema, add it here OR add `onDelete` to the
+        // schema (preferred). There's no drift guard for this — sorry.
+        const runIdsSubq = tx
+          .select({ id: heartbeatRuns.id })
+          .from(heartbeatRuns)
+          .where(eq(heartbeatRuns.companyId, id));
+        await tx.update(activityLog).set({ runId: null }).where(inArray(activityLog.runId, runIdsSubq));
+        await tx.update(costEvents).set({ heartbeatRunId: null }).where(inArray(costEvents.heartbeatRunId, runIdsSubq));
+        await tx.update(financeEvents).set({ heartbeatRunId: null }).where(inArray(financeEvents.heartbeatRunId, runIdsSubq));
 
         for (const tbl of COMPANY_CASCADE_TABLES) {
           // Each table is guaranteed to have a `companyId` column (the drift
