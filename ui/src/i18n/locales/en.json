@@ -714,7 +714,13 @@
       "archiving": "Archiving...",
       "alreadyArchived": "Already archived",
       "archiveFailed": "Failed to archive company",
-      "confirmArchive": "Archive company \"{{name}}\"? It will be hidden from the sidebar."
+      "confirmArchive": "Archive company \"{{name}}\"? It will be hidden from the sidebar.",
+      "deleteDescription": "Permanently delete this company and ALL its data (agents, issues, runs, secrets). This cannot be undone.",
+      "delete": "Delete company permanently",
+      "deleting": "Deleting...",
+      "deleteFailed": "Failed to delete company",
+      "confirmDelete1": "Permanently DELETE company \"{{name}}\" and all its data? This cannot be undone.",
+      "confirmDelete2": "Last warning: All agents, issues, runs, secrets, and activity for \"{{name}}\" will be permanently lost. Proceed?"
     }
   }
 }

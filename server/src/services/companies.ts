@@ -1,4 +1,4 @@
-import { and, count, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import { and, count, eq, getTableName, gte, inArray, lt, sql } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
 import {
   companies,
@@ -6,28 +6,67 @@ import {
   assets,
   agents,
   agentApiKeys,
+  agentConfigRevisions,
   agentRuntimeState,
   agentTaskSessions,
   agentWakeupRequests,
   issues,
+  issueApprovals,
+  issueAttachments,
   issueComments,
+  issueDocuments,
+  issueExecutionDecisions,
+  issueInboxArchives,
+  issueLabels,
+  issueReadStates,
+  issueRecoveryActions,
+  issueReferenceMentions,
+  issueRelations,
+  issueThreadInteractions,
+  issueTreeHoldMembers,
+  issueTreeHolds,
+  issueWorkProducts,
+  labels,
   projects,
+  projectGoals,
+  projectWorkspaces,
   goals,
   heartbeatRuns,
   heartbeatRunEvents,
+  heartbeatRunWatchdogDecisions,
   costEvents,
   financeEvents,
-  issueReadStates,
   approvalComments,
   approvals,
   activityLog,
   companySecrets,
+  companySecretBindings,
+  companySecretProviderConfigs,
+  companyUserSidebarPreferences,
+  secretAccessEvents,
   joinRequests,
   invites,
   principalPermissionGrants,
   companyMemberships,
   companySkills,
+  budgetPolicies,
+  budgetIncidents,
   documents,
+  documentRevisions,
+  environments,
+  environmentLeases,
+  executionWorkspaces,
+  workspaceOperations,
+  workspaceRuntimeServices,
+  feedbackExports,
+  feedbackVotes,
+  inboxDismissals,
+  pluginCompanySettings,
+  pluginManagedResources,
+  routines,
+  routineRevisions,
+  routineTriggers,
+  routineRuns,
 } from "@paperclipai/db";
 import { notFound, unprocessable } from "../errors.js";
 import { environmentService } from "./environments.js";
@@ -273,33 +312,115 @@ export function companyService(db: Db) {
 
     remove: (id: string) =>
       db.transaction(async (tx) => {
-        // Delete from child tables in dependency order
-        await tx.delete(heartbeatRunEvents).where(eq(heartbeatRunEvents.companyId, id));
-        await tx.delete(agentTaskSessions).where(eq(agentTaskSessions.companyId, id));
-        await tx.delete(activityLog).where(eq(activityLog.companyId, id));
-        await tx.delete(heartbeatRuns).where(eq(heartbeatRuns.companyId, id));
-        await tx.delete(agentWakeupRequests).where(eq(agentWakeupRequests.companyId, id));
-        await tx.delete(agentApiKeys).where(eq(agentApiKeys.companyId, id));
-        await tx.delete(agentRuntimeState).where(eq(agentRuntimeState.companyId, id));
-        await tx.delete(issueComments).where(eq(issueComments.companyId, id));
-        await tx.delete(costEvents).where(eq(costEvents.companyId, id));
-        await tx.delete(financeEvents).where(eq(financeEvents.companyId, id));
-        await tx.delete(approvalComments).where(eq(approvalComments.companyId, id));
-        await tx.delete(approvals).where(eq(approvals.companyId, id));
-        await tx.delete(companySecrets).where(eq(companySecrets.companyId, id));
-        await tx.delete(joinRequests).where(eq(joinRequests.companyId, id));
-        await tx.delete(invites).where(eq(invites.companyId, id));
-        await tx.delete(principalPermissionGrants).where(eq(principalPermissionGrants.companyId, id));
-        await tx.delete(companyMemberships).where(eq(companyMemberships.companyId, id));
-        await tx.delete(companySkills).where(eq(companySkills.companyId, id));
-        await tx.delete(issueReadStates).where(eq(issueReadStates.companyId, id));
-        await tx.delete(documents).where(eq(documents.companyId, id));
-        await tx.delete(issues).where(eq(issues.companyId, id));
-        await tx.delete(companyLogos).where(eq(companyLogos.companyId, id));
-        await tx.delete(assets).where(eq(assets.companyId, id));
-        await tx.delete(goals).where(eq(goals.companyId, id));
-        await tx.delete(projects).where(eq(projects.companyId, id));
-        await tx.delete(agents).where(eq(agents.companyId, id));
+        // fork_mangoclaw: hard-delete a company + all descendant rows.
+        //
+        // WHY THIS IS LONG (and why we don't just `DELETE FROM companies`):
+        //   PaperClip's FK constraints default to NO ACTION (no ON DELETE CASCADE
+        //   on any table). So a plain DELETE on companies fails the moment any
+        //   child row exists. We have to walk every table with a `company_id`
+        //   column in dependency order.
+        //
+        // WHY ARCHIVE IS THE NORMAL FLOW:
+        //   `archive(id)` flips `status='archived'` and keeps the data. That's
+        //   the right answer 90% of the time — audit trail, undo, no FK risk.
+        //   `remove()` is ONLY for test/abandoned companies whose data you
+        //   genuinely want gone forever. Archive does NOT free disk; this does.
+        //
+        // ⚠️  IF YOU ADD A NEW TABLE WITH A `company_id` COLUMN:
+        //   1. Add it to COMPANY_CASCADE_TABLES below in the correct
+        //      dependency order (children before parents).
+        //   2. The drift guard at the end will throw at runtime if you forget,
+        //      so this can't silently break.
+        //   3. Consider adding ON DELETE CASCADE to the new FK instead — that
+        //      makes manual maintenance here unnecessary for that table.
+        const COMPANY_CASCADE_TABLES = [
+          // Issue children (FK → issues)
+          issueThreadInteractions, issueAttachments, issueDocuments, issueComments,
+          issueApprovals, issueExecutionDecisions, issueInboxArchives, issueLabels,
+          issueReadStates, issueRecoveryActions, issueReferenceMentions, issueRelations,
+          issueTreeHoldMembers, issueTreeHolds, issueWorkProducts,
+          // Heartbeat children (FK → heartbeat_runs)
+          heartbeatRunWatchdogDecisions, heartbeatRunEvents,
+          // Agent children (FK → agents)
+          agentApiKeys, agentConfigRevisions, agentRuntimeState,
+          agentTaskSessions, agentWakeupRequests,
+          // Approval children (FK → approvals)
+          approvalComments,
+          // Document children
+          documentRevisions,
+          // Project children
+          projectGoals, projectWorkspaces,
+          // Environment children
+          environmentLeases, executionWorkspaces, workspaceOperations, workspaceRuntimeServices,
+          // Secret children
+          companySecretBindings, secretAccessEvents, companySecretProviderConfigs,
+          // Budget children
+          budgetIncidents,
+          // Feedback
+          feedbackExports, feedbackVotes,
+          // Plugin
+          pluginManagedResources, pluginCompanySettings,
+          // Routine children (FK → routines)
+          routineRuns, routineTriggers, routineRevisions, routines,
+          // Primary entities (referenced by children above)
+          heartbeatRuns,
+          documents,
+          issues,
+          goals,
+          projects,
+          environments,
+          companySecrets,
+          assets,
+          companyLogos,
+          agents,
+          // Company-direct (no further dependents within this set)
+          activityLog,
+          invites,
+          joinRequests,
+          principalPermissionGrants,
+          companyMemberships,
+          companySkills,
+          companyUserSidebarPreferences,
+          costEvents,
+          financeEvents,
+          approvals,
+          budgetPolicies,
+          labels,
+          inboxDismissals,
+        ];
+
+        for (const tbl of COMPANY_CASCADE_TABLES) {
+          // Each table is guaranteed to have a `companyId` column (the drift
+          // guard below verifies this at runtime). Drizzle's per-table column
+          // type is too narrow for a generic loop, so cast through `unknown`.
+          const companyIdCol = (tbl as unknown as { companyId: typeof companies.id }).companyId;
+          await tx.delete(tbl).where(eq(companyIdCol, id));
+        }
+
+        // Drift guard: catch tables added to the schema but not to the list above.
+        // Uses information_schema so it's robust to renames/additions.
+        const knownTableNames = new Set<string>([
+          ...COMPANY_CASCADE_TABLES.map((t) => getTableName(t)),
+          getTableName(companies),
+        ]);
+        const allCompanyScoped = await tx.execute<{ table_name: string }>(sql`
+          SELECT table_name FROM information_schema.columns
+          WHERE column_name = 'company_id' AND table_schema = 'public'
+        `);
+        // postgres.js returns the array directly; pg-style drivers return { rows }.
+        const rowsList = Array.isArray(allCompanyScoped)
+          ? (allCompanyScoped as Array<{ table_name: string }>)
+          : ((allCompanyScoped as { rows: Array<{ table_name: string }> }).rows ?? []);
+        const unknownTables = rowsList
+          .map((r) => r.table_name)
+          .filter((name) => !knownTableNames.has(name));
+        if (unknownTables.length > 0) {
+          throw new Error(
+            `company.remove drift guard: tables with company_id not in COMPANY_CASCADE_TABLES: ${unknownTables.join(", ")}. ` +
+            `Add them to the cascade list in dependency order, or add ON DELETE CASCADE to their FK.`,
+          );
+        }
+
         const rows = await tx
           .delete(companies)
           .where(eq(companies.id, id))

@@ -254,6 +254,26 @@ export function CompanySettings() {
     }
   });
 
+  // fork_mangoclaw: permanent delete mutation — wires DELETE /companies/:id with company-switch + cache refresh
+  const deleteMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      nextCompanyId
+    }: {
+      companyId: string;
+      nextCompanyId: string | null;
+    }) => companiesApi.remove(companyId).then(() => ({ nextCompanyId })),
+    onSuccess: async ({ nextCompanyId }) => {
+      setSelectedCompanyId(nextCompanyId);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.companies.all
+      });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.companies.stats
+      });
+    }
+  });
+
   useEffect(() => {
     setBreadcrumbs([
       { label: selectedCompany?.name ?? t("companySettings.breadcrumb.company", { defaultValue: "Company" }), href: "/dashboard" },
@@ -706,6 +726,50 @@ export function CompanySettings() {
                   : t("companySettings.dangerZone.archiveFailed", { defaultValue: "Failed to archive company" })}
               </span>
             )}
+          </div>
+
+          {/* fork_mangoclaw: permanent delete — separated from archive with stronger 2-step confirm */}
+          <div className="mt-4 border-t border-destructive/30 pt-3">
+            <p className="text-sm text-muted-foreground">
+              {t("companySettings.dangerZone.deleteDescription", { defaultValue: "Permanently delete this company and ALL its data (agents, issues, runs, secrets). This cannot be undone." })}
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                onClick={() => {
+                  if (!selectedCompanyId) return;
+                  const first = window.confirm(
+                    t("companySettings.dangerZone.confirmDelete1", { defaultValue: `Permanently DELETE company "${selectedCompany.name}" and all its data? This cannot be undone.`, name: selectedCompany.name })
+                  );
+                  if (!first) return;
+                  const second = window.confirm(
+                    t("companySettings.dangerZone.confirmDelete2", { defaultValue: `Last warning: All agents, issues, runs, secrets, and activity for "${selectedCompany.name}" will be permanently lost. Proceed?`, name: selectedCompany.name })
+                  );
+                  if (!second) return;
+                  const nextCompanyId =
+                    companies.find(
+                      (company) => company.id !== selectedCompanyId
+                    )?.id ?? null;
+                  deleteMutation.mutate({
+                    companyId: selectedCompanyId,
+                    nextCompanyId
+                  });
+                }}
+              >
+                {deleteMutation.isPending
+                  ? t("companySettings.dangerZone.deleting", { defaultValue: "Deleting..." })
+                  : t("companySettings.dangerZone.delete", { defaultValue: "Delete company permanently" })}
+              </Button>
+              {deleteMutation.isError && (
+                <span className="text-xs text-destructive">
+                  {deleteMutation.error instanceof Error
+                    ? deleteMutation.error.message
+                    : t("companySettings.dangerZone.deleteFailed", { defaultValue: "Failed to delete company" })}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -714,7 +714,13 @@
       "archiving": "보관 중... (Archiving...)",
       "alreadyArchived": "이미 보관됨 (Already archived)",
       "archiveFailed": "회사 보관 실패 (Failed to archive company)",
-      "confirmArchive": "회사 \"{{name}}\" 을(를) 보관하시겠습니까? 사이드바에서 숨겨집니다."
+      "confirmArchive": "회사 \"{{name}}\" 을(를) 보관하시겠습니까? 사이드바에서 숨겨집니다.",
+      "deleteDescription": "이 회사와 모든 데이터(에이전트·이슈·실행 기록·시크릿)를 영구 삭제. 되돌릴 수 없음. (Permanently delete this company and ALL its data. Cannot be undone.)",
+      "delete": "회사 영구 삭제 (Delete company permanently)",
+      "deleting": "삭제 중... (Deleting...)",
+      "deleteFailed": "회사 삭제 실패 (Failed to delete company)",
+      "confirmDelete1": "회사 \"{{name}}\" 과(와) 모든 데이터를 영구 삭제합니다. 정말 진행하시겠습니까? 되돌릴 수 없습니다.",
+      "confirmDelete2": "마지막 경고: \"{{name}}\" 의 모든 에이전트·이슈·실행 기록·시크릿·활동 로그가 영구적으로 사라집니다. 계속하시겠습니까?"
     }
   }
 }
