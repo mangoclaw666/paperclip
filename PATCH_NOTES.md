@@ -4,6 +4,36 @@
 
 ---
 
+## [2026-05-20] sync: instructions push 폐기 → external mode 전환
+
+### TL;DR
+
+`paperclipai sync` 가 매번 agent instructions 마크다운을 PaperClip 인스턴스 폴더로 PUT 하던 부분 제거. PaperClip 의 `instructionsBundleMode: "external"` 모드 사용으로 전환. workspace 가 source-of-truth — agent 가 매 cycle workspace 의 `_ops/agents/<slug>/*.md` 를 직접 읽음.
+
+### Why
+
+원래 sync 의 instructions PUT 로직은 PaperClip 의 default mode (`managed`) 가정으로 짜인 것. external 모드의 존재를 처음에 안 살핀 잘못. 결과:
+- workspace 파일 수정 후 sync 재실행 빠뜨리면 agent 가 옛 내용 그대로 읽음
+- Make 의 Director 가 옛 HEARTBEAT.md 들고 14 cycle 헛돌이 + $21 낭비
+- 매번 sync 명령 돌리는 mental overhead
+
+external 모드 = workspace 직접 참조 = sync 자체가 instructions 동기화에 불필요.
+
+### What changed
+
+- `cli/src/commands/fork_mangoclaw/ops.ts` — sync 의 agent 처리 블록 (line 727~762) 대체. instructions 파일 PUT 루프 제거. 대신 `PATCH /api/agents/{id}/instructions-bundle` 한 번 (mode=external, rootPath=`<workspace>/_ops/agents/<slug>`) 로 끝.
+- `cli/src/commands/fork_mangoclaw/_archive/sync-managed-instructions-2026-05-20.md` (신규) — 옛 코드 + 폐기 사연 보관.
+- `cli/src/commands/fork_mangoclaw/README.md` — sync 의 진짜 용도 표 갱신.
+- `CLAUDE.md` — "운영 모델 — Workspace 가 Source-of-Truth" 섹션 신설.
+- Make 회사 5명 agent (ceo/engineer/architect/writer/editor) external 모드 전환 (DB PATCH 완료).
+
+### 관련 발견
+
+- PaperClip 의 `enableIsolatedWorkspaces` 와는 별개. instructions 와 cwd 는 다른 트랙.
+- agent cwd 도 격리 폴더로 가는 문제는 별도 (heartbeat.ts 의 `ensureManagedProjectWorkspace`) — 진행 중.
+
+---
+
 ## [2026-05-20] OKR system — kind field + cascade automations + UI split
 
 ### TL;DR

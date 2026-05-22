@@ -94,15 +94,43 @@
 
 ---
 
+## 운영 모델 — Workspace 가 Source-of-Truth (2026-05-20)
+
+| 측면 | 정책 |
+|---|---|
+| **Agent instructions** | `instructionsBundleMode: "external"`. PaperClip 이 workspace 의 `_ops/agents/<slug>/` 를 직접 읽음 |
+| **Agent cwd** | workspace 직접 (`D:/00_WorkSpace/<프로젝트>/`). 격리 폴더 X (단, `enableIsolatedWorkspaces=false` 기본값 유지) |
+| **DB 데이터 (goals/projects/issues)** | DB 가 truth. workspace 의 `_ops/goals/*.md` 등은 export/import 보조 |
+| **externalSource** | 각 회사가 어느 workspace 에서 왔는지 DB 에 기록 (UI 의 "Open folder" / "Re-sync" 위해) |
+
+### `paperclipai sync` 가 하는 일
+
+1. Company import / agent upsert
+2. Goals / Projects / Issues markdown → DB upsert
+3. Agent adapterConfig PATCH (cwd + legacy prompt template 제거)
+4. **Agent instructions PATCH** — `mode: external` + `rootPath` 박기 (idempotent)
+5. externalSource PATCH
+
+**더 이상 안 함**: instructions 파일 PUT (managed 모드 가정의 잔재 — 2026-05-20 제거. `cli/src/commands/fork_mangoclaw/_archive/sync-managed-instructions-2026-05-20.md` 참조)
+
+### 절대 하지 말 것
+
+- agent 의 `instructionsBundleMode` 를 `managed` 로 되돌리기 — workspace 변경이 안 반영됨
+- `~/.paperclip/instances/default/companies/<cid>/agents/<aid>/instructions/` 폴더를 직접 수정 — external 모드는 거기 안 봄
+- `paperclipai sync` 를 "instructions 동기화" 로 설명하기 — 이제는 DB 데이터 upsert 전용
+
+---
+
 ## MAKE CEO 에이전트 설정
 
 | 항목 | 값 |
 |---|---|
 | 에이전트 이름 | `MAKE CEO` |
 | 역할 | Director (리더십) |
-| Instructions 폴더 | `D:\00_WorkSpace\03_Make\_ops\agents\ceo\` |
+| Instructions 모드 | **`external`** |
+| Instructions rootPath | `D:\00_WorkSpace\02_Make\_ops\agents\ceo` |
 | sync 추론 로직 | 에이전트 이름 마지막 단어 소문자 → 폴더명 (`CEO` → `ceo`) |
 | maxConcurrentRuns | 1 |
-| 월 예산 | $50 |
+| 월 예산 | $30 (전체 합산 $50: Director 30 + 일반 4명 × 5) |
 
-Director 규칙은 `agents/ceo/AGENTS.md` 참조. OKR 라이프사이클, 자기 위임 금지, KR 측정 기준 강제 포함.
+Director 규칙은 `agents/ceo/AGENTS.md` 참조. OKR 라이프사이클, 자기 위임 금지, KR 측정 기준 강제, 70% promote rule, parallel work rule 포함.

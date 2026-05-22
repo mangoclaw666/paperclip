@@ -4,6 +4,8 @@ A company can record the local filesystem path it was imported from. Once linked
 
 This is the standard workflow for any project that keeps its agents, projects, and tasks as markdown under a `_hub/` directory and pushes them to Paperclip with `paperclipai hub sync`.
 
+> **2026-05-20 update**: command was renamed `paperclipai hub sync` → `paperclipai sync`, and the folder marker is now `_paperclip/` (legacy `_hub/` still accepted). The sync command **no longer pushes agent instruction markdown** — agents read instructions directly from the workspace via `instructionsBundleMode: "external"` (set automatically by sync). See `PATCH_NOTES.md [2026-05-20]` and `cli/src/commands/fork_mangoclaw/_archive/sync-managed-instructions-2026-05-20.md`.
+
 ## Concept
 
 ```
