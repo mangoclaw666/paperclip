@@ -27,7 +27,12 @@ export default defineConfig(({ mode }) => ({
     watch: createUiDevWatchOptions(process.cwd()),
     proxy: {
       "/api": {
-        target: "http://localhost:3100",
+        // Host pinned to 127.0.0.1 (not "localhost") because Node 18+ resolves
+        // localhost to ::1 first, and the server only listens on IPv4 —
+        // ECONNREFUSED → vite turns it into HTTP 500 on every /api call.
+        // PAPERCLIP_API_PORT lets an isolated dev instance (e.g. 3200) be
+        // reached without patching this file. Default stays 3100.
+        target: `http://127.0.0.1:${process.env.PAPERCLIP_API_PORT ?? "3100"}`,
         ws: true,
       },
     },
