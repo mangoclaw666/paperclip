@@ -264,7 +264,11 @@ export function CompanySettings() {
       nextCompanyId: string | null;
     }) => companiesApi.remove(companyId).then(() => ({ nextCompanyId })),
     onSuccess: async ({ nextCompanyId }) => {
-      setSelectedCompanyId(nextCompanyId);
+      // nextCompanyId is null when the last company is deleted — leave selection
+      // alone in that case (the page will redirect / show empty state).
+      if (nextCompanyId !== null) {
+        setSelectedCompanyId(nextCompanyId);
+      }
       await queryClient.invalidateQueries({
         queryKey: queryKeys.companies.all
       });
