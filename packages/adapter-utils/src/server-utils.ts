@@ -1251,6 +1251,25 @@ async function resolveSpawnTarget(
     return { command: executable, args };
   }
 
+  // On Windows, .cmd/.bat wrappers go through cmd.exe and inherit the
+  // active console code page (often cp949 / cp932 / etc. on non-English
+  // Windows). Child processes spawned by those wrappers (claude.cmd →
+  // node.exe, python.cmd → python.exe, etc.) then write non-ASCII stdout
+  // in that legacy encoding. Node's default Buffer→String decoding
+  // treats the bytes as UTF-8, producing mojibake (e.g. Korean text
+  // stored as garbage in the DB).
+  //
+  // `chcp 65001 >nul` switches the cmd.exe session to UTF-8 before the
+  // wrapper runs. `>nul` suppresses chcp's confirmation message so it
+  // doesn't pollute the child's stdout. Combined with the
+  // PYTHONIOENCODING / PYTHONUTF8 / LANG env vars set in runChildProcess,
+  // this gives UTF-8 output across the common toolchains we spawn.
+  //
+  // Plain .exe targets are *not* re-wrapped here — wrapping arbitrary
+  // .exe argv (which may contain shell metacharacters in `node -e "..."`,
+  // etc.) through cmd.exe /c is brittle and breaks existing call sites.
+  // .exe binaries that need UTF-8 output rely on the env vars +
+  // setEncoding('utf8') on the parent's stdio readers.
   if (/\.(cmd|bat)$/i.test(executable)) {
     // Always use cmd.exe for .cmd/.bat wrappers. Some environments override
     // ComSpec to PowerShell, which breaks cmd-specific flags like /d /s /c.
@@ -1258,7 +1277,7 @@ async function resolveSpawnTarget(
     const commandLine = [quoteForCmd(executable), ...args.map(quoteForCmd)].join(" ");
     return {
       command: shell,
-      args: ["/d", "/s", "/c", commandLine],
+      args: ["/d", "/s", "/c", `chcp 65001 >nul && ${commandLine}`],
     };
   }
 
@@ -1934,6 +1953,20 @@ export async function runChildProcess(
       delete rawMerged[key];
     }
 
+    // On Windows, force UTF-8 stdio for any child process that respects
+    // these conventions. Combined with `chcp 65001` in resolveSpawnTarget,
+    // this gives best-effort UTF-8 output across:
+    //   - Python (PYTHONIOENCODING, PYTHONUTF8)
+    //   - locale-aware C runtimes (LANG, LC_ALL)
+    //   - Node-based CLIs that read these as hints
+    // Only set if not already present so explicit adapter env wins.
+    if (process.platform === "win32") {
+      if (!rawMerged.PYTHONIOENCODING) rawMerged.PYTHONIOENCODING = "utf-8";
+      if (!rawMerged.PYTHONUTF8) rawMerged.PYTHONUTF8 = "1";
+      if (!rawMerged.LANG) rawMerged.LANG = "C.UTF-8";
+      if (!rawMerged.LC_ALL) rawMerged.LC_ALL = "C.UTF-8";
+    }
+
     const mergedEnv = ensurePathInEnv(rawMerged);
     void resolveSpawnTarget(command, args, opts.cwd, mergedEnv, {
       remoteExecution: opts.remoteExecution ?? null,
@@ -1956,6 +1989,13 @@ export async function runChildProcess(
               onLogError(err, runId, "failed to record child process metadata");
             })
             : Promise.resolve();
+
+        // Explicitly set UTF-8 decoding on the child's stdio streams so
+        // Buffer chunks are decoded as UTF-8 (handling multi-byte boundaries
+        // correctly). Without this, default String(chunk) decoding can
+        // produce garbled output if a UTF-8 codepoint spans two chunks.
+        child.stdout?.setEncoding("utf8");
+        child.stderr?.setEncoding("utf8");
 
         runningProcesses.set(runId, { child, graceSec: opts.graceSec, processGroupId });
 
