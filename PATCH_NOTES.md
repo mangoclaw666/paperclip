@@ -4,6 +4,33 @@
 
 ---
 
+## [2026-05-25] sync: marker 위치 body 끝으로 (PR-14) — UI rich editor 정상화
+
+### TL;DR
+
+`buildDescriptionWithMarker` 가 description 의 **맨 위** 에 박던 `<!-- fork_mangoclaw: ... -->` HTML comment 를 **맨 끝** 으로 이동. PaperClip UI 의 rich editor 가 top-of-body HTML comment 보면 "unavailable" 로 fallback 하여 raw markdown 노출 + 수정 어려움 발생하던 burn 해결.
+
+### Why
+
+UI screenshot 으로 확인:
+- Overview 첫 줄에 `<!-- fork_mangoclaw: slug=prj-01-... | type=project -->` 노출
+- "Rich editor unavailable for this markdown. Showing raw source instead." 메시지
+- 클릭 시 raw markdown 진입 → 어색한 상태 변화
+
+원인: rich editor 의 markdown parser 가 top-of-body HTML comment 만나면 raw mode 로 fallback. body 끝 comment 는 대부분의 markdown renderer 가 무시.
+
+### What changed
+
+- `buildDescriptionWithMarker` (ops.ts) — marker 위치 top → bottom
+- `stripSlugMarker` (신규) — body 에서 marker 제거 helper. 3 collect 함수 (collectProjects / collectTasks / collectGoals) 가 disk body 읽을 때 stray marker 자동 제거 (top-marker 잔재 cleanup)
+- `SLUG_MARKER_RE_GLOBAL` — /g flag 버전 (replace-all 용)
+
+### Compatibility
+
+기존 DB 에 top-marker 있는 entity 도 다음 sync 1 회로 자동 변환 (body 정리 → 새 trailing marker 박힘). 점진적 cleanup.
+
+---
+
 ## [2026-05-25] sync: flat entity files (`<slug>.md`) — PR-13 후보
 
 ### TL;DR

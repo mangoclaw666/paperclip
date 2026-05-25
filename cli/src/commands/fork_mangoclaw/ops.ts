@@ -342,7 +342,34 @@ function extractSlugFromDescription(description: string | null | undefined): str
 }
 
 function buildDescriptionWithMarker(slug: string, kind: "goal" | "project" | "issue", body: string): string {
-  return `<!-- fork_mangoclaw: slug=${slug} | type=${kind} -->\n\n${body || ""}`.trimEnd();
+  // fork_mangoclaw: marker is appended at the end (not prepended) so it does
+  // not appear before the body in PaperClip's UI. The HTML comment was meant
+  // to be invisible, but PaperClip's rich editor falls back to raw markdown
+  // when it sees a top-of-body comment, exposing the marker and making the
+  // entity uneditable in rich mode. Trailing the marker keeps it parseable by
+  // SLUG_MARKER_RE (which matches anywhere in the string) while letting the
+  // rich editor render the body cleanly.
+  const cleanBody = (body || "").trimEnd();
+  const marker = `<!-- fork_mangoclaw: slug=${slug} | type=${kind} -->`;
+  if (!cleanBody) return marker;
+  return `${cleanBody}\n\n${marker}\n`;
+}
+
+/**
+ * fork_mangoclaw: global-flag form of SLUG_MARKER_RE for stripping ALL marker
+ * occurrences. Used in case a body ever contains multiple markers (e.g. a
+ * mid-migration body where the old top marker survived alongside a new
+ * trailing one). Without /g, replace only kills the first.
+ */
+const SLUG_MARKER_RE_GLOBAL = /<!--\s*fork_mangoclaw:\s*slug=([\w-]+)(?:\s*\|\s*type=(\w+))?\s*-->|<!--\s*make-meta:\s*slug=([\w-]+)(?:\s*\|\s*type=(\w+))?\s*-->/g;
+
+/**
+ * fork_mangoclaw: strip slug markers from a body so re-emission stays clean.
+ * Removes top-of-body markers (pre-PR-14 sync output) and any accidental copies.
+ */
+function stripSlugMarker(body: string | null | undefined): string {
+  if (!body) return "";
+  return body.replace(SLUG_MARKER_RE_GLOBAL, "").replace(/^\s+|\s+$/g, "").replace(/\n{3,}/g, "\n\n");
 }
 
 /**
@@ -415,14 +442,17 @@ async function collectProjects(paperclipDir: string): Promise<ProjectSpec[]> {
     if (!file) continue;
     const text = await readFile(file, "utf-8");
     const { meta, body } = parseFrontmatter(text);
+    // Strip any stray slug markers from disk body so sync's buildDescriptionWithMarker
+    // doesn't accumulate duplicates after PR-14 (marker position changed top → bottom).
+    const cleanBody = stripSlugMarker(body);
     out.push({
       slug,
       name: cleanTitle(String(meta.name ?? slug)),
-      description: body || "",
+      description: cleanBody,
       status: normalizeProjectStatus(meta.status as string | undefined),
       goalSlug: (meta.goal_slug && String(meta.goal_slug).trim()) ? String(meta.goal_slug) : null,
       assigneeAgentSlug: (meta.assignee_agent_slug && String(meta.assignee_agent_slug).trim()) ? String(meta.assignee_agent_slug) : null,
-      bodyText: body,
+      bodyText: cleanBody,
       filePath: file,
     });
   }
@@ -438,16 +468,17 @@ async function collectTasks(paperclipDir: string): Promise<TaskSpec[]> {
     if (!file) continue;
     const text = await readFile(file, "utf-8");
     const { meta, body } = parseFrontmatter(text);
+    const cleanBody = stripSlugMarker(body);
     out.push({
       slug,
       title: cleanTitle(String(meta.name ?? meta.title ?? slug)),
-      description: body || "",
+      description: cleanBody,
       status: String(meta.status ?? "todo"),
       priority: String(meta.priority ?? "medium"),
       projectSlug: (meta.project_slug && String(meta.project_slug).trim()) ? String(meta.project_slug) : null,
       goalSlug: (meta.goal_slug && String(meta.goal_slug).trim()) ? String(meta.goal_slug) : null,
       assigneeAgentSlug: (meta.assignee_agent_slug && String(meta.assignee_agent_slug).trim()) ? String(meta.assignee_agent_slug) : null,
-      bodyText: body,
+      bodyText: cleanBody,
       filePath: file,
     });
   }
@@ -490,18 +521,19 @@ async function collectGoals(paperclipDir: string): Promise<GoalEntry[]> {
     if (!goalFile) continue;
     const text = await readFile(goalFile, "utf-8");
     const { meta, body } = parseFrontmatter(text);
-    const firstHeading = body.split("\n").find((l) => l.startsWith("# "))?.replace(/^#\s+/, "").trim();
+    const cleanBody = stripSlugMarker(body);
+    const firstHeading = cleanBody.split("\n").find((l) => l.startsWith("# "))?.replace(/^#\s+/, "").trim();
     const rawStatus = String(meta.status ?? "active");
     const status = (rawStatus === "in_progress" ? "active" : rawStatus) as GoalEntry["status"];
     const title = cleanTitle(String(meta.name ?? meta.title ?? firstHeading ?? slug));
     out.push({
       slug,
       title,
-      description: body || null,
+      description: cleanBody || null,
       level: (String(meta.level ?? "company")) as GoalEntry["level"],
       status,
       parentGoalSlug: (meta.parent_goal_slug && String(meta.parent_goal_slug) !== "null" && String(meta.parent_goal_slug).trim()) ? String(meta.parent_goal_slug) : null,
-      bodyText: body,
+      bodyText: cleanBody,
       filePath: goalFile,
     });
   }
