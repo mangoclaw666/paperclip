@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation } from "@/lib/router";
 import { useQuery } from "@tanstack/react-query";
-import { FolderOpen, Plus } from "lucide-react";
+import { FolderOpen, GripVertical, Plus } from "lucide-react";
 import {
   DndContext,
   MouseSensor,
@@ -52,6 +52,10 @@ type ProjectItemProps = {
   projectSidebarSlots: ProjectSidebarSlot[];
   setSidebarOpen: (open: boolean) => void;
   isDragging?: boolean;
+  /** fork_mangoclaw: drag end 직후 click 차단 (예: 250ms 이내) */
+  isClickSuppressed?: () => boolean;
+  /** fork_mangoclaw: dnd-kit drag handle 의 listeners + attributes */
+  dragHandleProps?: React.HTMLAttributes<HTMLElement>;
 };
 
 function projectTimestamp(project: Project): number {
@@ -84,41 +88,60 @@ function ProjectItem({
   projectSidebarSlots,
   setSidebarOpen,
   isDragging = false,
+  isClickSuppressed,
+  dragHandleProps,
 }: ProjectItemProps) {
   const routeRef = projectRouteRef(project);
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <NavLink
-        to={`/projects/${routeRef}/issues`}
-        state={SIDEBAR_SCROLL_RESET_STATE}
-        onClick={(e) => {
-          if (isDragging) {
-            e.preventDefault();
-            return;
-          }
-          if (isMobile) setSidebarOpen(false);
-        }}
-        className={cn(
-          "flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-medium transition-colors",
-          activeProjectRef === routeRef || activeProjectRef === project.id
-            ? "bg-accent text-foreground"
-            : "text-foreground/80 hover:bg-accent/50 hover:text-foreground",
+    <div className="group/project flex flex-col gap-0.5">
+      <div className="relative flex items-center">
+        {/* fork_mangoclaw: drag handle — listeners 는 이 grip icon 에만 박힘.
+            NavLink 영역은 click navigation 그대로 유지 → 충돌 X.
+            평소엔 거의 안 보이고 hover 시 visible. */}
+        {dragHandleProps && (
+          <span
+            {...dragHandleProps}
+            className="absolute left-0 z-10 flex h-full w-3 cursor-grab items-center justify-center text-muted-foreground/0 transition-colors hover:bg-accent/30 group-hover/project:text-muted-foreground/50 active:cursor-grabbing"
+            aria-label="Drag to reorder"
+            title="Drag to reorder"
+          >
+            <GripVertical className="h-3 w-3" />
+          </span>
         )}
-      >
-        <span
-          className="shrink-0 h-3.5 w-3.5 rounded-sm"
-          style={{ backgroundColor: project.color ?? "#6366f1" }}
-        />
-        {/* fork_mangoclaw: prefix identifier (e.g. "MK-01") in sidebar list. */}
-        <span className="flex-1 truncate">
-          {project.identifier && (
-            <span className="font-mono text-xs text-muted-foreground mr-1.5">{project.identifier}</span>
+        <NavLink
+          to={`/projects/${routeRef}/issues`}
+          state={SIDEBAR_SCROLL_RESET_STATE}
+          onClick={(e) => {
+            // fork_mangoclaw: drag 중 또는 drag 직후 250ms 이내 NavLink click 무시 (safety net)
+            if (isDragging || isClickSuppressed?.()) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            if (isMobile) setSidebarOpen(false);
+          }}
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-1.5 text-[13px] font-medium transition-colors",
+            activeProjectRef === routeRef || activeProjectRef === project.id
+              ? "bg-accent text-foreground"
+              : "text-foreground/80 hover:bg-accent/50 hover:text-foreground",
           )}
-          {project.name}
-        </span>
-        {project.pauseReason === "budget" ? <BudgetSidebarMarker title="Project paused by budget" /> : null}
-      </NavLink>
+        >
+          <span
+            className="shrink-0 h-3.5 w-3.5 rounded-sm"
+            style={{ backgroundColor: project.color ?? "#6366f1" }}
+          />
+          {/* fork_mangoclaw: prefix identifier (e.g. "MK-01") in sidebar list. */}
+          <span className="flex-1 truncate">
+            {project.identifier && (
+              <span className="font-mono text-xs text-muted-foreground mr-1.5">{project.identifier}</span>
+            )}
+            {project.name}
+          </span>
+          {project.pauseReason === "budget" ? <BudgetSidebarMarker title="Project paused by budget" /> : null}
+        </NavLink>
+      </div>
       {projectSidebarSlots.length > 0 && (
         <div className="ml-5 flex flex-col gap-0.5">
           {projectSidebarSlots.map((slot) => (
@@ -142,6 +165,8 @@ function ProjectItem({
   );
 }
 
+// fork_mangoclaw: ProjectItem 을 dnd-kit useSortable 로 감싼 래퍼.
+// "top" sortMode 일 때만 사용. listeners 는 ProjectItem 의 GripVertical 핸들에만 박힘 — NavLink click 과 분리.
 function SortableProjectItem(props: ProjectItemProps) {
   const {
     attributes,
@@ -152,6 +177,9 @@ function SortableProjectItem(props: ProjectItemProps) {
     isDragging,
   } = useSortable({ id: props.project.id });
 
+  // listeners + attributes 를 drag handle 로 전달. outer div 는 transform 만.
+  const dragHandleProps = { ...attributes, ...listeners } as React.HTMLAttributes<HTMLElement>;
+
   return (
     <div
       ref={setNodeRef}
@@ -161,10 +189,8 @@ function SortableProjectItem(props: ProjectItemProps) {
         zIndex: isDragging ? 10 : undefined,
       }}
       className={cn(isDragging && "opacity-80")}
-      {...attributes}
-      {...listeners}
     >
-      <ProjectItem {...props} isDragging={isDragging} />
+      <ProjectItem {...props} isDragging={isDragging} dragHandleProps={dragHandleProps} />
     </div>
   );
 }
@@ -220,6 +246,14 @@ export function SidebarProjects() {
 
   const projectMatch = location.pathname.match(/^\/(?:[^/]+\/)?projects\/([^/]+)/);
   const activeProjectRef = projectMatch?.[1] ?? null;
+
+  // fork_mangoclaw: drag end 후 click event (NavLink navigation 유발) 차단용 ref.
+  // useRef 사용 — state 와 달리 re-render 안 일으키고 즉시 읽기 가능.
+  const dragEndRef = useRef(0);
+  const isClickSuppressed = useCallback(() => {
+    return Date.now() - dragEndRef.current < 250;
+  }, []);
+
   const sensors = useSensors(
     // Project reordering is intentionally desktop-only; touch should remain tap/scroll behavior.
     useSensor(MouseSensor, {
@@ -272,14 +306,23 @@ export function SidebarProjects() {
     (event: DragEndEvent) => {
       if (!isTopMode) return;
       const { active, over } = event;
-      if (!over || active.id === over.id) return;
+      if (!over || active.id === over.id) {
+        // drop 위치 변화 없어도 click suppress (단순 클릭으로 끝났을 수도)
+        dragEndRef.current = Date.now();
+        return;
+      }
 
       const ids = orderedProjects.map((project) => project.id);
       const oldIndex = ids.indexOf(active.id as string);
       const newIndex = ids.indexOf(over.id as string);
       if (oldIndex === -1 || newIndex === -1) return;
 
-      persistOrder(arrayMove(ids, oldIndex, newIndex));
+      // drag end timestamp — NavLink onClick 에서 250ms 이내 click 차단
+      dragEndRef.current = Date.now();
+      // setTimeout 으로 defer — dnd-kit cleanup 끝난 후 state 변경
+      setTimeout(() => {
+        persistOrder(arrayMove(ids, oldIndex, newIndex));
+      }, 0);
     },
     [isTopMode, orderedProjects, persistOrder],
   );
@@ -339,6 +382,7 @@ export function SidebarProjects() {
                   project={project}
                   projectSidebarSlots={projectSidebarSlots}
                   setSidebarOpen={setSidebarOpen}
+                  isClickSuppressed={isClickSuppressed}
                 />
               ))}
             </div>
