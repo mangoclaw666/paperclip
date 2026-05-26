@@ -354,6 +354,9 @@ export function SidebarAgents() {
     }),
   );
 
+  // fork_mangoclaw: drag end 직후 발생하는 click event (NavLink navigation 유발) 차단용 timestamp.
+  const [lastDragEndAt, setLastDragEndAt] = useState(0);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       if (!isTopMode) return;
@@ -365,7 +368,12 @@ export function SidebarAgents() {
       const newIndex = ids.indexOf(over.id as string);
       if (oldIndex === -1 || newIndex === -1) return;
 
-      persistOrder(arrayMove(ids, oldIndex, newIndex));
+      // drag end timestamp 기록 — 직후 click 차단용 (NavLink 이 navigation 발화 방지)
+      setLastDragEndAt(Date.now());
+      // setTimeout 으로 defer — dnd-kit cleanup 끝난 후 state 변경 → reconciler 가 SortableContext 안전하게 재구성
+      setTimeout(() => {
+        persistOrder(arrayMove(ids, oldIndex, newIndex));
+      }, 0);
     },
     [isTopMode, orderedAgents, persistOrder],
   );
