@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, desc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
 import {
   agents,
@@ -403,7 +403,12 @@ export function agentService(db: Db) {
       if (!options?.includeTerminated) {
         conditions.push(ne(agents.status, "terminated"));
       }
-      const rows = await db.select().from(agents).where(and(...conditions));
+      // fork_mangoclaw: sortOrder ASC (manual reorder), name ASC tie-break.
+      const rows = await db
+        .select()
+        .from(agents)
+        .where(and(...conditions))
+        .orderBy(asc(agents.sortOrder), asc(agents.name));
       const hydrated = await hydrateAgentSpend(rows);
       return hydrated.map(normalizeAgentRow);
     },
@@ -424,9 +429,21 @@ export function agentService(db: Db) {
       const role = data.role ?? "general";
       const normalizedPermissions = normalizeAgentPermissions(data.permissions, role);
       const runtimeConfig = normalizeRuntimeConfigForNewAgent(data.runtimeConfig);
+
+      // fork_mangoclaw: default sortOrder = max + 10 (새 agent 가 마지막에 박힘).
+      // 호출자가 명시적 sortOrder 줬으면 그대로 사용.
+      let sortOrder = data.sortOrder;
+      if (sortOrder === undefined || sortOrder === null) {
+        const [maxRow] = await db
+          .select({ maxSort: sql<number>`coalesce(max(${agents.sortOrder}), 0)` })
+          .from(agents)
+          .where(eq(agents.companyId, companyId));
+        sortOrder = (maxRow?.maxSort ?? 0) + 10;
+      }
+
       const created = await db
         .insert(agents)
-        .values({ ...data, name: uniqueName, companyId, role, permissions: normalizedPermissions, runtimeConfig })
+        .values({ ...data, name: uniqueName, companyId, role, permissions: normalizedPermissions, runtimeConfig, sortOrder })
         .returning()
         .then((rows) => rows[0]);
 

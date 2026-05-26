@@ -85,6 +85,8 @@ export interface Agent {
   adapterConfig: Record<string, unknown>;
   runtimeConfig: AgentRuntimeConfig;
   defaultEnvironmentId?: string | null;
+  /** fork_mangoclaw: manual sort order for dashboard / sidebar reorder. Optional for backward compat in test fixtures — server always returns a number. */
+  sortOrder?: number;
   budgetMonthlyCents: number;
   spentMonthlyCents: number;
   pauseReason: PauseReason | null;

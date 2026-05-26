@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "@/lib/router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { agentsApi, type OrgNode } from "../api/agents";
 import { heartbeatsApi } from "../api/heartbeats";
 import { useCompany } from "../context/CompanyContext";
@@ -17,7 +17,7 @@ import { relativeTime, cn, agentRouteRef, agentUrl } from "../lib/utils";
 import { PageTabBar } from "../components/PageTabBar";
 import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Bot, Plus, List, GitBranch, SlidersHorizontal } from "lucide-react";
+import { Bot, Plus, List, GitBranch, SlidersHorizontal, ChevronUp, ChevronDown } from "lucide-react";
 import { type Agent } from "@paperclipai/shared";
 import { getRoleLabel } from "../components/agent-config-primitives";
 import { useTranslation } from "@/i18n";
@@ -36,9 +36,9 @@ function matchesFilter(status: string, tab: FilterTab, showTerminated: boolean):
 }
 
 function filterAgents(agents: Agent[], tab: FilterTab, showTerminated: boolean): Agent[] {
-  return agents
-    .filter((a) => matchesFilter(a.status, tab, showTerminated))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // fork_mangoclaw: API 가 sortOrder ASC 로 이미 정렬해서 줌. name fallback 은 API 측 tie-break.
+  // 클라이언트는 필터링만 — 순서는 server 가 진실원.
+  return agents.filter((a) => matchesFilter(a.status, tab, showTerminated));
 }
 
 function getConfiguredModel(agent: Agent): string | null {
@@ -67,6 +67,7 @@ export function Agents() {
   const { setBreadcrumbs } = useBreadcrumbs();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { isMobile } = useSidebar();
   const pathSegment = location.pathname.split("/").pop() ?? "all";
   const tab: FilterTab = (pathSegment === "all" || pathSegment === "active" || pathSegment === "paused" || pathSegment === "error") ? pathSegment : "all";
@@ -130,6 +131,29 @@ export function Agents() {
 
   const filtered = filterAgents(agents ?? [], tab, showTerminated);
   const filteredOrg = filterOrgTree(orgTree ?? [], tab, showTerminated);
+
+  // fork_mangoclaw: sortOrder 스왑 — 인접 두 에이전트의 sortOrder 교환.
+  // 양쪽 PATCH 후 list 쿼리 invalidate.
+  const reorderMutation = useMutation({
+    mutationFn: async ({ a, b }: { a: Agent; b: Agent }) => {
+      const aOrder = a.sortOrder ?? 0;
+      const bOrder = b.sortOrder ?? 0;
+      await Promise.all([
+        agentsApi.update(a.id, { sortOrder: bOrder }, selectedCompanyId!),
+        agentsApi.update(b.id, { sortOrder: aOrder }, selectedCompanyId!),
+      ]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.list(selectedCompanyId!) });
+    },
+  });
+
+  const moveAgent = (idx: number, direction: "up" | "down") => {
+    const other = direction === "up" ? filtered[idx - 1] : filtered[idx + 1];
+    const self = filtered[idx];
+    if (!other || !self || reorderMutation.isPending) return;
+    reorderMutation.mutate({ a: self, b: other });
+  };
 
   return (
     <div className="space-y-4">
@@ -225,7 +249,9 @@ export function Agents() {
       {/* List view */}
       {effectiveView === "list" && filtered.length > 0 && (
         <div className="border border-border">
-          {filtered.map((agent) => {
+          {filtered.map((agent, idx) => {
+            const canMoveUp = idx > 0;
+            const canMoveDown = idx < filtered.length - 1;
             return (
               <EntityRow
                 key={agent.id}
@@ -234,11 +260,44 @@ export function Agents() {
                 to={agentUrl(agent)}
                 className={agent.pausedAt && tab !== "paused" ? "opacity-50" : ""}
                 leading={
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span
-                      className={`absolute inline-flex h-full w-full rounded-full ${agentStatusDot[agent.status] ?? agentStatusDotDefault}`}
-                    />
-                  </span>
+                  // fork_mangoclaw: reorder ↑/↓ + status dot.
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        aria-label={t("agents.actions.moveUp", { defaultValue: "Move up" })}
+                        title={t("agents.actions.moveUp", { defaultValue: "Move up" })}
+                        disabled={!canMoveUp || reorderMutation.isPending}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          moveAgent(idx, "up");
+                        }}
+                        className="text-muted-foreground/40 hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground/40 transition-colors p-0.5 -my-0.5"
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={t("agents.actions.moveDown", { defaultValue: "Move down" })}
+                        title={t("agents.actions.moveDown", { defaultValue: "Move down" })}
+                        disabled={!canMoveDown || reorderMutation.isPending}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          moveAgent(idx, "down");
+                        }}
+                        className="text-muted-foreground/40 hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground/40 transition-colors p-0.5 -my-0.5"
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span
+                        className={`absolute inline-flex h-full w-full rounded-full ${agentStatusDot[agent.status] ?? agentStatusDotDefault}`}
+                      />
+                    </span>
+                  </div>
                 }
                 trailing={
                   <div className="flex items-center gap-3">
