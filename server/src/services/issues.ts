@@ -5342,6 +5342,23 @@ export function issueService(db: Db) {
       return [...resolved];
     },
 
+    /**
+     * Returns true if the most recent comment on the given issue was authored by
+     * the specified agent (assignee). Used to suppress in-review wake cascades:
+     * when the assignee has already commented "waiting for review", we do not
+     * want other agents' subsequent comments to re-wake the assignee.
+     */
+    wasLastCommentByAssignee: async (issueId: string, assigneeId: string, companyId: string): Promise<boolean> => {
+      const lastComment = await db
+        .select({ authorAgentId: issueComments.authorAgentId })
+        .from(issueComments)
+        .where(and(eq(issueComments.issueId, issueId), eq(issueComments.companyId, companyId)))
+        .orderBy(desc(issueComments.createdAt), desc(issueComments.id))
+        .limit(1)
+        .then((rows) => rows[0] ?? null);
+      return lastComment?.authorAgentId === assigneeId;
+    },
+
     findMentionedProjectIds: async (
       issueId: string,
       opts?: { includeCommentBodies?: boolean },

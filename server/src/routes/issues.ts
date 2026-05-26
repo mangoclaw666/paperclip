@@ -4637,7 +4637,28 @@ export function issueRoutes(
       const actorIsAgent = actor.actorType === "agent";
       const selfComment = actorIsAgent && actor.actorId === assigneeId;
       const skipWake = selfComment || isClosed;
-      if (assigneeId && (reopened || !skipWake)) {
+
+      // Tier-1 invariant: suppress in-review wake cascade.
+      // When (a) the issue is in_review, (b) this comment comes from a *different* agent,
+      // and (c) the assignee was already the last commenter (i.e. they already signalled
+      // "waiting for review"), re-waking them would restart the loop indefinitely.
+      // Reopens are intentional signals and are always allowed through.
+      const inReviewCascadeRisk =
+        !reopened &&
+        currentIssue.status === "in_review" &&
+        assigneeId != null &&
+        actorIsAgent &&
+        actor.actorId !== assigneeId &&
+        (await svc.wasLastCommentByAssignee(currentIssue.id, assigneeId, currentIssue.companyId));
+
+      if (inReviewCascadeRisk) {
+        logger.info(
+          { issueId: currentIssue.id, agentId: assigneeId, actorId: actor.actorId },
+          "heartbeat.wake_suppressed reason=in_review_cascade",
+        );
+      }
+
+      if (assigneeId && (reopened || !skipWake) && !inReviewCascadeRisk) {
         if (reopened) {
           wakeups.set(assigneeId, {
             source: "automation",
@@ -4703,6 +4724,16 @@ export function issueRoutes(
       for (const mentionedId of mentionedIds) {
         if (wakeups.has(mentionedId)) continue;
         if (actorIsAgent && actor.actorId === mentionedId) continue;
+
+        // Suppress mention-wake for the assignee under the same in-review cascade condition.
+        if (mentionedId === assigneeId && inReviewCascadeRisk) {
+          logger.info(
+            { issueId: currentIssue.id, agentId: mentionedId, actorId: actor.actorId },
+            "heartbeat.wake_suppressed reason=in_review_cascade source=mention",
+          );
+          continue;
+        }
+
         wakeups.set(mentionedId, {
           source: "automation",
           triggerDetail: "system",
